@@ -46,4 +46,5 @@ model Comment {
   songId    Int
   text      String
   createdAt DateTime @default(now())
+  time      Float?
 }

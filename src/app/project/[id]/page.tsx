@@ -66,13 +66,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setCommentInputs((prev) => ({ ...prev, [songId]: value }));
   };
 
-  const handleAddComment = async (songId: number) => {
-    if (!commentInputs[songId]) return;
+  const handleAddComment = async (songId: number, text?: string, time?: number) => {
+    const commentValue = text !== undefined ? text : commentInputs[songId];
+    if (!commentValue) return;
     setCommentLoading((prev) => ({ ...prev, [songId]: true }));
     const res = await fetch(`/api/project/${id}/song/${songId}/comment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: commentInputs[songId] }),
+      body: JSON.stringify({ text: commentValue, time }),
     });
     if (res.ok) {
       const newComment = await res.json();

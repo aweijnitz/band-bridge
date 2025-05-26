@@ -1,10 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading }: any) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
 
   useEffect(() => {
     if (!waveformRef.current) return;
@@ -18,6 +26,13 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       barGap: 2,
       cursorColor: '#222',
       url: `/filestore/${song.filePath}`,
+      plugins: [
+        Hover.create({
+          lineColor: '#f59e42',
+          labelBackground: '#fff',
+          labelColor: '#222',
+        })
+      ]
     });
     wavesurferRef.current = ws;
     ws.on('play', () => setIsPlaying(true));
@@ -41,6 +56,14 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       wavesurferRef.current.stop();
       setIsPlaying(false);
     }
+  };
+
+  // When posting a comment, use the current cursor time
+  const handleAddCommentWithTime = async () => {
+    if (!wavesurferRef.current) return;
+    const time = wavesurferRef.current.getCurrentTime();
+    await onAddComment(song.id, commentInput, time);
+    commentInput = '';
   };
 
   return (
@@ -78,7 +101,12 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         <ul className="mb-2">
           {(comments || []).map((comment: any) => (
             <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
-              <span>{comment.text}</span>
+              <span>
+                {comment.time !== undefined && comment.time !== null && (
+                  <span className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs font-mono mr-2">{formatTime(comment.time)}</span>
+                )}
+                {comment.text}
+              </span>
               <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
             </li>
           ))}
@@ -92,7 +120,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
             placeholder="Add a comment..."
           />
           <button
-            onClick={() => onAddComment(song.id)}
+            onClick={handleAddCommentWithTime}
             className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
             disabled={commentLoading}
           >

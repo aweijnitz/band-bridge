@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { songId: str
       return NextResponse.json({ error: 'Invalid song id' }, { status: 400 });
     }
     const body = await req.json();
-    const { text } = body;
+    const { text, time } = body;
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Missing or invalid comment text' }, { status: 400 });
     }
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { songId: str
       data: {
         songId,
         text,
+        time: typeof time === 'number' ? time : undefined,
       },
     });
     return NextResponse.json(comment, { status: 201 });
