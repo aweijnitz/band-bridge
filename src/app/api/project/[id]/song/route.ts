@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 
 const prisma = new PrismaClient();
-const FILESTORE_PATH = path.join(process.cwd(), 'filestore');
+const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!file || isNaN(projectId)) {
       return NextResponse.json({ error: 'Missing file or invalid project id' }, { status: 400 });
     }
-    // Save file to filestore
+    // Save file to public/filestore
     await mkdir(FILESTORE_PATH, { recursive: true });
     const fileName = `${Date.now()}_${file.name}`;
     const filePath = path.join(FILESTORE_PATH, fileName);
