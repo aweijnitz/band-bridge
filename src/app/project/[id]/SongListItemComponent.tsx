@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
+import Regions from 'wavesurfer.js/dist/plugins/regions.esm.js';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -12,15 +13,14 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hoverTime, setHoverTime] = useState<number | null>(null);
 
+  // Setup wavesurfer with Hover and Regions plugins
   useEffect(() => {
     if (!waveformRef.current) return;
-    // Create wavesurfer instance
     const ws = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: '#60a5fa', // Tailwind blue-400
-      progressColor: '#2563eb', // Tailwind blue-700
+      waveColor: '#60a5fa',
+      progressColor: '#2563eb',
       height: 64,
       barWidth: 2,
       barGap: 2,
@@ -31,7 +31,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           lineColor: '#f59e42',
           labelBackground: '#fff',
           labelColor: '#222',
-        })
+        }),
+        Regions.create(),
       ]
     });
     wavesurferRef.current = ws;
@@ -44,6 +45,24 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.filePath]);
+
+  // Add comment markers as regions
+  useEffect(() => {
+    const ws = wavesurferRef.current;
+    if (!ws || !ws.regions) return;
+    ws.regions.clear();
+    (comments || []).forEach((comment: any) => {
+      if (comment.time !== undefined && comment.time !== null) {
+        ws.regions.addRegion({
+          start: comment.time,
+          end: comment.time + 0.1,
+          color: 'rgba(59,130,246,0.5)',
+          drag: false,
+          resize: false,
+        });
+      }
+    });
+  }, [comments]);
 
   const handlePlayPause = () => {
     if (wavesurferRef.current) {
@@ -61,9 +80,24 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   // When posting a comment, use the current cursor time
   const handleAddCommentWithTime = async () => {
     if (!wavesurferRef.current) return;
+    if (commentLoading) return;
     const time = wavesurferRef.current.getCurrentTime();
     await onAddComment(song.id, commentInput, time);
-    commentInput = '';
+  };
+
+  // Handle Enter key for comment input
+  const handleCommentInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !commentLoading) {
+      e.preventDefault();
+      handleAddCommentWithTime();
+    }
+  };
+
+  // Seek to a comment's time
+  const handleSeekToTime = (time: number) => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.setTime(time);
+    }
   };
 
   return (
@@ -80,10 +114,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
-            // Pause icon
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
           ) : (
-            // Play icon
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>
           )}
         </button>
@@ -92,7 +124,6 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 flex items-center justify-center"
           aria-label="Stop"
         >
-          {/* Stop icon */}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
         </button>
       </div>
@@ -103,7 +134,13 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
             <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
               <span>
                 {comment.time !== undefined && comment.time !== null && (
-                  <span className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs font-mono mr-2">{formatTime(comment.time)}</span>
+                  <button
+                    type="button"
+                    className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs font-mono mr-2 hover:bg-blue-200 focus:outline-none"
+                    onClick={() => handleSeekToTime(comment.time)}
+                  >
+                    {formatTime(comment.time)}
+                  </button>
                 )}
                 {comment.text}
               </span>
@@ -118,6 +155,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
             onChange={e => onCommentInputChange(song.id, e.target.value)}
             className="flex-1 border rounded px-2 py-1"
             placeholder="Add a comment..."
+            onKeyDown={handleCommentInputKeyDown}
           />
           <button
             onClick={handleAddCommentWithTime}
