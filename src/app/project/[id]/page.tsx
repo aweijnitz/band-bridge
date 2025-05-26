@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 
 const mockSongs = [
@@ -23,7 +23,8 @@ const mockSongs = [
   },
 ];
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
+export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [songs, setSongs] = useState(mockSongs);
   const [commentInputs, setCommentInputs] = useState<{ [key: number]: string }>({});
 
@@ -60,10 +61,10 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           <li>
             <span className="mx-2">/</span>
           </li>
-          <li className="text-gray-800 font-semibold">Project #{params.id}</li>
+          <li className="text-gray-800 font-semibold">Project #{id}</li>
         </ol>
       </nav>
-      <h1 className="text-3xl font-bold mb-6">Project #{params.id}</h1>
+      <h1 className="text-3xl font-bold mb-6">Project #{id}</h1>
       <div className="mb-8">
         <label className="block mb-2 font-semibold">Upload new song</label>
         <input type="file" accept="audio/mp3,audio/wav" className="block" />
