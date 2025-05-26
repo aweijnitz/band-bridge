@@ -13,8 +13,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [commentInputs, setCommentInputs] = useState<{ [songId: number]: string }>({});
   const [commentLoading, setCommentLoading] = useState<{ [songId: number]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [project, setProject] = useState<any>(null);
 
   useEffect(() => {
+    fetch(`/api/project/${id}`)
+      .then(res => res.json())
+      .then(data => setProject(data))
+      .catch(() => setProject(null));
     fetch(`/api/project/${id}/song`)
       .then(res => res.json())
       .then(data => {
@@ -30,17 +35,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
     setUploading(true);
-    const fileInput = fileInputRef.current;
-    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-      setError('Please select a file');
-      setUploading(false);
-      return;
-    }
-    const file = fileInput.files[0];
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`/api/project/${id}/song`, {
@@ -54,7 +53,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       fetch(`/api/project/${id}/song/${newSong.id}/comment`)
         .then(res => res.json())
         .then(commentsData => setComments(prev => ({ ...prev, [newSong.id]: commentsData })));
-      fileInput.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } else {
       const err = await res.json();
       setError(err.error || 'Failed to upload song');
@@ -96,14 +95,21 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           <li className="text-gray-800 font-semibold">Project #{id}</li>
         </ol>
       </nav>
-      <h1 className="text-3xl font-bold mb-6">Project #{id}</h1>
-      <form className="mb-8" onSubmit={handleUpload}>
+      <h1 className="text-3xl font-bold mb-6">{project ? project.name : `Project #${id}`}</h1>
+      <div className="mb-8">
         <label className="block mb-2 font-semibold">Upload new song</label>
-        <input ref={fileInputRef} type="file" accept="audio/mp3,audio/wav" className="block mb-2" />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" disabled={uploading}>
-          {uploading ? 'Uploading...' : 'Upload'}
-        </button>
-      </form>
+        <label className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">
+          {uploading ? 'Uploading...' : 'Select File'}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/mp3,audio/wav"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={uploading}
+          />
+        </label>
+      </div>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {loading ? (
         <div>Loading...</div>
