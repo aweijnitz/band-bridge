@@ -1,53 +1,85 @@
 "use client";
 
-import { use, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-
-const mockSongs = [
-  {
-    id: 1,
-    title: 'Song One',
-    url: '/mock/song1.mp3',
-    comments: [
-      { id: 1, text: 'Great intro!' },
-      { id: 2, text: 'Love the guitar.' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Song Two',
-    url: '/mock/song2.mp3',
-    comments: [
-      { id: 1, text: 'Nice vocals.' },
-    ],
-  },
-];
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [songs, setSongs] = useState(mockSongs);
-  const [commentInputs, setCommentInputs] = useState<{ [key: number]: string }>({});
+  const [songs, setSongs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [comments, setComments] = useState<{ [songId: number]: any[] }>({});
+  const [commentInputs, setCommentInputs] = useState<{ [songId: number]: string }>({});
+  const [commentLoading, setCommentLoading] = useState<{ [songId: number]: boolean }>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch(`/api/project/${id}/song`)
+      .then(res => res.json())
+      .then(data => {
+        setSongs(data);
+        // Fetch comments for each song
+        data.forEach((song: any) => {
+          fetch(`/api/project/${id}/song/${song.id}/comment`)
+            .then(res => res.json())
+            .then(commentsData => setComments(prev => ({ ...prev, [song.id]: commentsData })));
+        });
+      })
+      .catch(() => setError('Failed to load songs'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setUploading(true);
+    const fileInput = fileInputRef.current;
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      setError('Please select a file');
+      setUploading(false);
+      return;
+    }
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/project/${id}/song`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const newSong = await res.json();
+      setSongs((prev) => [newSong, ...prev]);
+      // Fetch comments for the new song
+      fetch(`/api/project/${id}/song/${newSong.id}/comment`)
+        .then(res => res.json())
+        .then(commentsData => setComments(prev => ({ ...prev, [newSong.id]: commentsData })));
+      fileInput.value = '';
+    } else {
+      const err = await res.json();
+      setError(err.error || 'Failed to upload song');
+    }
+    setUploading(false);
+  };
 
   const handleCommentChange = (songId: number, value: string) => {
     setCommentInputs((prev) => ({ ...prev, [songId]: value }));
   };
 
-  const handleAddComment = (songId: number) => {
+  const handleAddComment = async (songId: number) => {
     if (!commentInputs[songId]) return;
-    setSongs((prev) =>
-      prev.map((song) =>
-        song.id === songId
-          ? {
-              ...song,
-              comments: [
-                ...song.comments,
-                { id: song.comments.length + 1, text: commentInputs[songId] },
-              ],
-            }
-          : song
-      )
-    );
-    setCommentInputs((prev) => ({ ...prev, [songId]: '' }));
+    setCommentLoading((prev) => ({ ...prev, [songId]: true }));
+    const res = await fetch(`/api/project/${id}/song/${songId}/comment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: commentInputs[songId] }),
+    });
+    if (res.ok) {
+      const newComment = await res.json();
+      setComments((prev) => ({ ...prev, [songId]: [...(prev[songId] || []), newComment] }));
+      setCommentInputs((prev) => ({ ...prev, [songId]: '' }));
+    }
+    setCommentLoading((prev) => ({ ...prev, [songId]: false }));
   };
 
   return (
@@ -65,41 +97,56 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         </ol>
       </nav>
       <h1 className="text-3xl font-bold mb-6">Project #{id}</h1>
-      <div className="mb-8">
+      <form className="mb-8" onSubmit={handleUpload}>
         <label className="block mb-2 font-semibold">Upload new song</label>
-        <input type="file" accept="audio/mp3,audio/wav" className="block" />
-      </div>
-      <div className="space-y-8">
-        {songs.map((song) => (
-          <div key={song.id} className="bg-white rounded shadow p-6">
-            <h2 className="text-xl font-semibold mb-2">{song.title}</h2>
-            <audio controls src={song.url} className="w-full mb-4" />
-            <div>
-              <h3 className="font-semibold mb-2">Comments</h3>
-              <ul className="mb-2">
-                {song.comments.map((comment) => (
-                  <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700">{comment.text}</li>
-                ))}
-              </ul>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={commentInputs[song.id] || ''}
-                  onChange={(e) => handleCommentChange(song.id, e.target.value)}
-                  className="flex-1 border rounded px-2 py-1"
-                  placeholder="Add a comment..."
-                />
-                <button
-                  onClick={() => handleAddComment(song.id)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Add
-                </button>
+        <input ref={fileInputRef} type="file" accept="audio/mp3,audio/wav" className="block mb-2" />
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" disabled={uploading}>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
+      </form>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
+      {loading ? (
+        <div>Loading...</div>
+      ) : songs.length === 0 ? (
+        <div className="text-gray-600">No songs in this project yet.</div>
+      ) : (
+        <div className="space-y-8">
+          {songs.map((song) => (
+            <div key={song.id} className="bg-white rounded shadow p-6">
+              <h2 className="text-xl font-semibold mb-2">{song.title}</h2>
+              <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(song.uploadDate).toLocaleString()}</div>
+              <audio controls src={`/filestore/${song.filePath}`} className="w-full mb-4" />
+              <div>
+                <h3 className="font-semibold mb-2">Comments</h3>
+                <ul className="mb-2">
+                  {(comments[song.id] || []).map((comment) => (
+                    <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
+                      <span>{comment.text}</span>
+                      <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={commentInputs[song.id] || ''}
+                    onChange={(e) => handleCommentChange(song.id, e.target.value)}
+                    className="flex-1 border rounded px-2 py-1"
+                    placeholder="Add a comment..."
+                  />
+                  <button
+                    onClick={() => handleAddComment(song.id)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    disabled={commentLoading[song.id]}
+                  >
+                    {commentLoading[song.id] ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

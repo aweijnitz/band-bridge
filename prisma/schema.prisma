@@ -37,4 +37,13 @@ model Song {
   title      String
   filePath   String
   uploadDate DateTime @default(now())
+  comments   Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  song      Song     @relation(fields: [songId], references: [id])
+  songId    Int
+  text      String
+  createdAt DateTime @default(now())
 }

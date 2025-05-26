@@ -6,6 +6,22 @@ import path from 'path';
 const prisma = new PrismaClient();
 const FILESTORE_PATH = path.join(process.cwd(), 'filestore');
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const projectId = parseInt(params.id, 10);
+    if (isNaN(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
+    }
+    const songs = await prisma.song.findMany({
+      where: { projectId },
+      orderBy: { uploadDate: 'desc' },
+    });
+    return NextResponse.json(songs);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch songs', details: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const formData = await req.formData();
