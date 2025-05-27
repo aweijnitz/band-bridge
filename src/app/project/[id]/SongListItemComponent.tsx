@@ -9,7 +9,7 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading }: any) {
+export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, projectStatus, onDelete }: any) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -107,6 +107,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       <div className="mb-2">
         <div ref={waveformRef} className="w-full min-w-0" />
       </div>
+
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={handlePlayPause}
@@ -126,6 +127,15 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
         </button>
+        {projectStatus === 'archived' && (
+          <button
+            onClick={() => onDelete && onDelete(song.id)}
+            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 flex items-center justify-center"
+            aria-label="Delete Song"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        )}
       </div>
       <div>
         <h3 className="font-semibold mb-2">Comments</h3>

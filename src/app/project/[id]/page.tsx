@@ -133,6 +133,8 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
               commentInput={commentInputs[song.id]}
               onCommentInputChange={handleCommentChange}
               commentLoading={commentLoading[song.id]}
+              projectStatus={project?.status}
+              onDelete={project?.status === 'archived' ? ((songId: number) => {/* TODO: implement delete logic */}) : undefined}
             />
           ))}
         </div>

@@ -30,9 +30,12 @@ export default function ProjectCardComponent({ project, onEdit, onArchive, onDel
         <div className="text-gray-500 text-sm">Status: {project.status}</div>
       </Link>
       <div className="flex gap-2 mt-2">
-        <button onClick={() => onEdit(project)} className="px-2 py-1 bg-yellow-500 text-white rounded">Edit</button>
-        <button onClick={() => onArchive(project.id)} className="px-2 py-1 bg-gray-500 text-white rounded" disabled={project.status === 'archived'}>Archive</button>
-        <button onClick={() => onDelete(project.id)} className="px-2 py-1 bg-red-600 text-white rounded" disabled={project.status !== 'archived'}>Delete</button>
+        {project.status !== 'archived' && (
+          <button onClick={() => onEdit(project)} className="px-2 py-1 bg-yellow-500 text-white rounded">Edit</button>
+        )}
+        {project.status === 'archived' && (
+          <button onClick={() => onDelete(project.id)} className="px-2 py-1 bg-red-600 text-white rounded">Delete</button>
+        )}
       </div>
     </div>
   );
