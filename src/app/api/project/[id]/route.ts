@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
+import { unlink } from 'fs/promises';
+import path from 'path';
 
 const prisma = new PrismaClient();
+const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -40,5 +43,39 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
     return NextResponse.json({ error: 'Failed to update project', details: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
+    }
+    // Find all songs for the project
+    const songs = await prisma.song.findMany({ where: { projectId: id } });
+    const songIds = songs.map(song => song.id);
+    // Delete all comments for these songs
+    await prisma.comment.deleteMany({ where: { songId: { in: songIds } } });
+    // Delete all songs for the project
+    await prisma.song.deleteMany({ where: { projectId: id } });
+    // Delete all song files from the filesystem
+    for (const song of songs) {
+      if (song.filePath) {
+        try {
+          await unlink(path.join(FILESTORE_PATH, song.filePath));
+        } catch (err) {
+          // Ignore file not found errors
+        }
+      }
+    }
+    // Delete the project
+    const deleted = await prisma.project.delete({ where: { id } });
+    return NextResponse.json({ success: true, deleted });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Failed to delete project', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 } 
