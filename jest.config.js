@@ -22,4 +22,9 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   setupFiles: ['<rootDir>/jest.setup.js'],
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.jest.json',
+    },
+  },
 };
