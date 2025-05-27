@@ -105,16 +105,61 @@ export default function DashboardPage() {
       ) : projects.length === 0 ? (
         <div className="text-gray-600">No projects. Please create one.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCardComponent
-              key={project.id}
-              project={project}
-              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
-              onArchive={handleArchive}
-              onDelete={handleDelete}
-            />
-          ))}
+        <div className="space-y-10">
+          {/* OPEN PROJECTS */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Open Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects
+                .filter(p => p.status === 'open')
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((project) => (
+                  <ProjectCardComponent
+                    key={project.id}
+                    project={project}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))}
+            </div>
+          </div>
+          {/* RELEASED PROJECTS */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Released Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects
+                .filter(p => p.status === 'released')
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((project) => (
+                  <ProjectCardComponent
+                    key={project.id}
+                    project={project}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))}
+            </div>
+          </div>
+          {/* ARCHIVED PROJECTS */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Archived Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects
+                .filter(p => p.status === 'archived')
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((project) => (
+                  <ProjectCardComponent
+                    key={project.id}
+                    project={project}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))}
+            </div>
+          </div>
         </div>
       )}
       {/* Create Project Modal */}
