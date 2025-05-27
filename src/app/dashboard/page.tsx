@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import ProjectCardComponent from './ProjectCardComponent';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
 type ProjectStatus = typeof PROJECT_STATUS[number];
@@ -106,20 +107,13 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <div key={project.id} className="bg-white rounded shadow p-6 hover:shadow-lg transition">
-              <Link href={`/project/${project.id}`} className="block mb-2">
-                <h2 className="text-xl font-semibold">{project.name}</h2>
-                <div className="text-gray-400 text-xs">ID: {project.id}</div>
-                <div className="text-gray-500 text-sm">Band: {project.bandName}</div>
-                <div className="text-gray-500 text-sm">Owner: {project.owner}</div>
-                <div className="text-gray-500 text-sm">Status: {project.status}</div>
-              </Link>
-              <div className="flex gap-2 mt-2">
-                <button onClick={() => { setShowEdit(project); setForm({ name: project.name, bandName: project.bandName, owner: project.owner, status: project.status }); }} className="px-2 py-1 bg-yellow-500 text-white rounded">Edit</button>
-                <button onClick={() => handleArchive(project.id)} className="px-2 py-1 bg-gray-500 text-white rounded" disabled={project.status === 'archived'}>Archive</button>
-                <button onClick={() => handleDelete(project.id)} className="px-2 py-1 bg-red-600 text-white rounded" disabled={project.status !== 'archived'}>Delete</button>
-              </div>
-            </div>
+            <ProjectCardComponent
+              key={project.id}
+              project={project}
+              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}
