@@ -104,8 +104,10 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
       </nav>
       <h1 className="text-3xl font-bold mb-6">{project ? project.name : `Project #${id}`}</h1>
       <div className="mb-8">
-        <label className="block mb-2 font-semibold">Upload new song</label>
-        <label className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">
+        <label className="block mb-2 font-semibold">
+          {project?.status !== 'open' ? 'Project not open' : 'Upload new song'}
+        </label>
+        <label className={`inline-block px-4 py-2 rounded ${project?.status === 'open' ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}>
           {uploading ? 'Uploading...' : 'Select File'}
           <input
             ref={fileInputRef}
@@ -113,7 +115,7 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
             accept="audio/mp3,audio/wav"
             className="hidden"
             onChange={handleFileChange}
-            disabled={uploading}
+            disabled={uploading || project?.status !== 'open'}
           />
         </label>
       </div>
