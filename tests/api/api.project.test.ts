@@ -1,4 +1,4 @@
-import { POST } from '../src/app/api/project/route';
+import { POST } from '../../src/app/api/project/route';
 
 function mockRequest(body: any) {
   return {

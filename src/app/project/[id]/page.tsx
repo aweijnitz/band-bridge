@@ -4,8 +4,13 @@ import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import SongListItemComponent from './SongListItemComponent';
 
-export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+type ParamsType = Promise<{ id: string }> | { id: string };
+function isPromise(obj: any): obj is Promise<any> {
+  return !!obj && typeof obj.then === 'function';
+}
+
+export default function ProjectPage({ params }: { params: ParamsType }) {
+  const { id } = isPromise(params) ? use(params) : params;
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -134,4 +139,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       )}
     </div>
   );
+}
+
+// Test-only export for easier testing
+export function ProjectPageTest({ params }: { params: { id: string } }) {
+  return <ProjectPage params={Promise.resolve(params)} />;
 } 

@@ -1,7 +1,7 @@
-import { GET, POST } from '../src/app/api/project/[id]/song/[songId]/comment/route';
+import { GET, POST } from '../../src/app/api/project/[id]/song/[songId]/comment/route';
 
 // Mock PrismaClient to avoid real DB calls
-jest.mock('../src/generated/prisma', () => {
+jest.mock('../../src/generated/prisma', () => {
   return {
     PrismaClient: jest.fn().mockImplementation(() => ({
       comment: {

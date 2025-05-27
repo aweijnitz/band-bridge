@@ -1,7 +1,31 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import SongListItemComponent from '../src/app/project/[id]/SongListItemComponent';
+import SongListItemComponent from '../../src/app/project/[id]/SongListItemComponent';
+
+jest.mock('wavesurfer.js', () => {
+  return {
+    create: jest.fn(() => ({
+      on: jest.fn(),
+      destroy: jest.fn(),
+      playPause: jest.fn(),
+      stop: jest.fn(),
+      getCurrentTime: jest.fn(() => 0),
+      setTime: jest.fn(),
+      regions: {
+        clear: jest.fn(),
+        addRegion: jest.fn(),
+      },
+    })),
+  };
+});
+
+beforeAll(() => {
+  window.HTMLMediaElement.prototype.load = jest.fn();
+  window.HTMLMediaElement.prototype.play = jest.fn();
+  window.HTMLMediaElement.prototype.pause = jest.fn();
+  window.HTMLMediaElement.prototype.addTextTrack = jest.fn();
+});
 
 describe('SongListItemComponent', () => {
   const mockSong = {

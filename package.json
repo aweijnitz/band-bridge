@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
+    "test": "npm run test:api && npm run test:ui",
+    "test:api": "jest --testPathPattern=tests/api",
+    "test:ui": "jest --testPathPattern=tests/ui",
     "test:coverage": "jest --coverage",
     "reset": "npx prisma migrate reset --force && rm -rf public/filestore/*"
   },
@@ -32,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "supertest": "^7.1.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.3.4",

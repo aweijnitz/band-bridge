@@ -1,4 +1,4 @@
-import { POST } from '../src/app/api/project/[id]/song/route';
+import { POST } from '../../src/app/api/project/[id]/song/route';
 
 // Mock fs/promises to avoid writing files during tests
 jest.mock('fs/promises', () => ({
@@ -7,7 +7,7 @@ jest.mock('fs/promises', () => ({
 }));
 
 // Mock PrismaClient to avoid real DB calls
-jest.mock('../src/generated/prisma', () => {
+jest.mock('../../src/generated/prisma', () => {
   return {
     PrismaClient: jest.fn().mockImplementation(() => ({
       song: {
