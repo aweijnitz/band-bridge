@@ -102,4 +102,33 @@ describe('SongListItemComponent', () => {
     fireEvent.click(button);
     expect(mockOnAddComment).toHaveBeenCalled();
   });
+
+  it('shows Delete button only if projectStatus is archived', () => {
+    const { rerender } = render(
+      <SongListItemComponent
+        song={mockSong}
+        comments={mockComments}
+        onAddComment={mockOnAddComment}
+        commentInput=""
+        onCommentInputChange={mockOnCommentInputChange}
+        commentLoading={false}
+        projectStatus="open"
+      />
+    );
+    expect(screen.queryByLabelText('Delete Song')).not.toBeInTheDocument();
+
+    rerender(
+      <SongListItemComponent
+        song={mockSong}
+        comments={mockComments}
+        onAddComment={mockOnAddComment}
+        commentInput=""
+        onCommentInputChange={mockOnCommentInputChange}
+        commentLoading={false}
+        projectStatus="archived"
+        onDelete={jest.fn()}
+      />
+    );
+    expect(screen.getByLabelText('Delete Song')).toBeInTheDocument();
+  });
 }); 
