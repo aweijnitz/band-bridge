@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import ProjectCardComponent from './ProjectCardComponent';
+import ProjectModalComponent from './ProjectModalComponent';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
 type ProjectStatus = typeof PROJECT_STATUS[number];
@@ -20,8 +21,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
-  const [form, setForm] = useState({ name: '', bandName: '', owner: '', status: 'open' });
+  const [form, setForm] = useState<{ name: string; bandName: string; owner: string; status: ProjectStatus }>({ name: '', bandName: '', owner: '', status: 'open' });
   const [error, setError] = useState<string | null>(null);
+  const createNameInputRef = useRef<HTMLInputElement>(null);
+  const editNameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch('/api/project', { method: 'GET' })
@@ -33,6 +36,18 @@ export default function DashboardPage() {
       .catch(() => setError('Failed to load projects'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (showCreate && createNameInputRef.current) {
+      createNameInputRef.current.focus();
+    }
+  }, [showCreate]);
+
+  useEffect(() => {
+    if (showEdit && editNameInputRef.current) {
+      editNameInputRef.current.focus();
+    }
+  }, [showEdit]);
 
   const handleCreate = async () => {
     setError(null);
@@ -97,7 +112,15 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Projects</h1>
-        <button onClick={() => setShowCreate(true)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Create Project</button>
+        <button
+          onClick={() => {
+            setForm({ name: '', bandName: '', owner: '', status: 'open' });
+            setShowCreate(true);
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Create Project
+        </button>
       </div>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {loading ? (
@@ -117,7 +140,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -135,7 +158,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -153,7 +176,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -162,33 +185,24 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {/* Create Project Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create Project</h2>
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Project Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Band Name" value={form.bandName} onChange={e => setForm(f => ({ ...f, bandName: e.target.value }))} />
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Owner" value={form.owner} onChange={e => setForm(f => ({ ...f, owner: e.target.value }))} />
-            <select className="w-full mb-4 border rounded px-2 py-1" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-              {PROJECT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-              <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white rounded">Create</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProjectModalComponent
+        open={showCreate}
+        form={form}
+        onFormChange={setForm}
+        onClose={() => setShowCreate(false)}
+        onCreate={handleCreate}
+        loading={loading}
+        error={error}
+      />
       {/* Edit Project Modal */}
       {showEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Edit Project</h2>
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Project Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <input ref={editNameInputRef} className="w-full mb-2 border rounded px-2 py-1" placeholder="Project Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Band Name" value={form.bandName} onChange={e => setForm(f => ({ ...f, bandName: e.target.value }))} />
             <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Owner" value={form.owner} onChange={e => setForm(f => ({ ...f, owner: e.target.value }))} />
-            <select className="w-full mb-4 border rounded px-2 py-1" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+            <select className="w-full mb-4 border rounded px-2 py-1" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ProjectStatus }))}>
               {PROJECT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <div className="flex gap-2 justify-end">
