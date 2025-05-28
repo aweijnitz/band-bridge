@@ -31,10 +31,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
     const data = await req.json();
-    const { name, bandName, owner, status } = data;
-    if (!name || !bandName || !owner || !status) {
+    const { name, owner, status } = data;
+    if (!name || !owner || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
     const updated = await prisma.project.update({
       where: { id },
       data: { name, bandName, owner, status },
