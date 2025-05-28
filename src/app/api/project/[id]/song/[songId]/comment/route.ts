@@ -3,9 +3,10 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest, { params }: { params: { songId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
   try {
-    const songId = parseInt(params.songId, 10);
+    const { songId: songIdStr } = await params;
+    const songId = parseInt(songIdStr, 10);
     if (isNaN(songId)) {
       return NextResponse.json({ error: 'Invalid song id' }, { status: 400 });
     }
@@ -19,9 +20,10 @@ export async function GET(req: NextRequest, { params }: { params: { songId: stri
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { songId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
   try {
-    const songId = parseInt(params.songId, 10);
+    const { songId: songIdStr } = await params;
+    const songId = parseInt(songIdStr, 10);
     if (isNaN(songId)) {
       return NextResponse.json({ error: 'Invalid song id' }, { status: 400 });
     }
