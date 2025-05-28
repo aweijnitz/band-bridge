@@ -12,9 +12,10 @@ type ProjectModalComponentProps = {
   onCreate: () => void;
   loading?: boolean;
   error?: string | null;
+  mode?: 'create' | 'edit';
 };
 
-export default function ProjectModalComponent({ open, form, bandName, onFormChange, onClose, onCreate, loading, error }: ProjectModalComponentProps) {
+export default function ProjectModalComponent({ open, form, bandName, onFormChange, onClose, onCreate, loading, error, mode = 'create' }: ProjectModalComponentProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,8 +29,9 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded shadow w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Create Project</h2>
+        <h2 className="text-xl font-bold mb-4">{mode === 'edit' ? 'Edit Project' : 'Create Project'}</h2>
         {error && <div className="mb-2 text-red-600">{error}</div>}
+        <div className="w-full mb-2 px-2 py-1 text-gray-700">Band: {bandName}</div>
         <input
           ref={nameInputRef}
           className="w-full mb-2 border rounded px-2 py-1"
@@ -37,7 +39,6 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
           value={form.name}
           onChange={e => onFormChange({ ...form, name: e.target.value })}
         />
-        <div className="w-full mb-2 px-2 py-1 text-gray-700">Band: {bandName}</div>
         <input
           className="w-full mb-2 border rounded px-2 py-1"
           placeholder="Owner"
@@ -53,7 +54,9 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
         </select>
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-          <button onClick={onCreate} className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>{loading ? 'Creating...' : 'Create'}</button>
+          <button onClick={onCreate} className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>
+            {loading ? (mode === 'edit' ? 'Saving...' : 'Creating...') : (mode === 'edit' ? 'Save' : 'Create')}
+          </button>
         </div>
       </div>
     </div>

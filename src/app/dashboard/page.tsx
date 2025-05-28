@@ -196,25 +196,19 @@ export default function DashboardPage() {
         onCreate={handleCreate}
         loading={loading}
         error={error}
+        mode="create"
       />
-      {/* Edit Project Modal */}
-      {showEdit && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Project</h2>
-            <input ref={editNameInputRef} className="w-full mb-2 border rounded px-2 py-1" placeholder="Project Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            <div className="w-full mb-2 px-2 py-1 text-gray-700">Band: {bandName}</div>
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Owner" value={form.owner} onChange={e => setForm(f => ({ ...f, owner: e.target.value }))} />
-            <select className="w-full mb-4 border rounded px-2 py-1" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ProjectStatus }))}>
-              {PROJECT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowEdit(null)} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-              <button onClick={handleEdit} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProjectModalComponent
+        open={!!showEdit}
+        form={form}
+        bandName={bandName}
+        onFormChange={setForm}
+        onClose={() => setShowEdit(null)}
+        onCreate={handleEdit}
+        loading={loading}
+        error={error}
+        mode="edit"
+      />
     </div>
   );
 } 
