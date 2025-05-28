@@ -5,6 +5,8 @@ import ProjectCardComponent from './ProjectCardComponent';
 import ProjectModalComponent from './ProjectModalComponent';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
+const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
+
 type ProjectStatus = typeof PROJECT_STATUS[number];
 
 type Project = {
@@ -21,7 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
-  const [form, setForm] = useState<{ name: string; bandName: string; owner: string; status: ProjectStatus }>({ name: '', bandName: '', owner: '', status: 'open' });
+  const [form, setForm] = useState<{ name: string; owner: string; status: ProjectStatus }>({ name: '', owner: '', status: 'open' });
   const [error, setError] = useState<string | null>(null);
   const createNameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +62,7 @@ export default function DashboardPage() {
       const newProject = await res.json();
       setProjects((prev) => [...prev, newProject]);
       setShowCreate(false);
-      setForm({ name: '', bandName: '', owner: '', status: 'open' });
+      setForm({ name: '', owner: '', status: 'open' });
     } else {
       const err = await res.json();
       setError(err.error || 'Failed to create project');
@@ -111,10 +113,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Projects</h1>
+        <h1 className="text-3xl font-bold">{bandName} Projects</h1>
         <button
           onClick={() => {
-            setForm({ name: '', bandName: '', owner: '', status: 'open' });
+            setForm({ name: '', owner: '', status: 'open' });
             setShowCreate(true);
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -140,7 +142,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -158,7 +160,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -176,7 +178,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, bandName: p.bandName, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -188,6 +190,7 @@ export default function DashboardPage() {
       <ProjectModalComponent
         open={showCreate}
         form={form}
+        bandName={bandName}
         onFormChange={setForm}
         onClose={() => setShowCreate(false)}
         onCreate={handleCreate}
@@ -200,7 +203,7 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded shadow w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Edit Project</h2>
             <input ref={editNameInputRef} className="w-full mb-2 border rounded px-2 py-1" placeholder="Project Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Band Name" value={form.bandName} onChange={e => setForm(f => ({ ...f, bandName: e.target.value }))} />
+            <div className="w-full mb-2 px-2 py-1 text-gray-700">Band: {bandName}</div>
             <input className="w-full mb-2 border rounded px-2 py-1" placeholder="Owner" value={form.owner} onChange={e => setForm(f => ({ ...f, owner: e.target.value }))} />
             <select className="w-full mb-4 border rounded px-2 py-1" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ProjectStatus }))}>
               {PROJECT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}

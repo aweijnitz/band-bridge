@@ -6,9 +6,10 @@ import path from 'path';
 const prisma = new PrismaClient();
 const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const projectId = parseInt(params.id, 10);
+    const { id: idStr } = await params;
+    const projectId = parseInt(idStr, 10);
     if (isNaN(projectId)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
@@ -22,12 +23,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: idStr } = await params;
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     let title = formData.get('title') as string | null;
-    const projectId = parseInt(params.id, 10);
+    const projectId = parseInt(idStr, 10);
     if (!file || isNaN(projectId)) {
       return NextResponse.json({ error: 'Missing file or invalid project id' }, { status: 400 });
     }

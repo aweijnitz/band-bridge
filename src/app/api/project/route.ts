@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, ProjectStatus } from '@/generated/prisma';
+import path from 'path';
 
 const prisma = new PrismaClient();
+
+// Band configuration (keep in sync with dashboard)
+const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
 
 export async function GET() {
   try {
@@ -15,8 +19,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, bandName, owner, status } = body;
-    if (!name || !bandName || !owner || !status) {
+    const { name, owner, status } = body;
+    if (!name || !owner || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (!['open', 'released', 'archived'].includes(status)) {
@@ -25,7 +29,7 @@ export async function POST(req: NextRequest) {
     const project = await prisma.project.create({
       data: {
         name,
-        bandName,
+        bandName: bandName,
         owner,
         status,
       },

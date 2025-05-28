@@ -5,15 +5,16 @@ type ProjectStatus = typeof PROJECT_STATUS[number];
 
 type ProjectModalComponentProps = {
   open: boolean;
-  form: { name: string; bandName: string; owner: string; status: ProjectStatus };
-  onFormChange: (form: { name: string; bandName: string; owner: string; status: ProjectStatus }) => void;
+  form: { name: string; owner: string; status: ProjectStatus };
+  bandName: string;
+  onFormChange: (form: { name: string; owner: string; status: ProjectStatus }) => void;
   onClose: () => void;
   onCreate: () => void;
   loading?: boolean;
   error?: string | null;
 };
 
-export default function ProjectModalComponent({ open, form, onFormChange, onClose, onCreate, loading, error }: ProjectModalComponentProps) {
+export default function ProjectModalComponent({ open, form, bandName, onFormChange, onClose, onCreate, loading, error }: ProjectModalComponentProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -36,12 +37,7 @@ export default function ProjectModalComponent({ open, form, onFormChange, onClos
           value={form.name}
           onChange={e => onFormChange({ ...form, name: e.target.value })}
         />
-        <input
-          className="w-full mb-2 border rounded px-2 py-1"
-          placeholder="Band Name"
-          value={form.bandName}
-          onChange={e => onFormChange({ ...form, bandName: e.target.value })}
-        />
+        <div className="w-full mb-2 px-2 py-1 text-gray-700">Band: {bandName}</div>
         <input
           className="w-full mb-2 border rounded px-2 py-1"
           placeholder="Owner"
