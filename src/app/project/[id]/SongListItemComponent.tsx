@@ -9,25 +9,61 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function decodeDatFile(buffer: ArrayBuffer): number[] {
+  // .dat files from audiowaveform are 32-bit floats, little-endian
+  const floatArray = new Float32Array(buffer);
+  return Array.from(floatArray);
+}
+
 export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, projectStatus, onDelete }: any) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [peaks, setPeaks] = useState<number[] | null>(null);
+  const [duration, setDuration] = useState<number | undefined>(undefined);
 
-  // Setup wavesurfer with Hover and Regions plugins
+  // Fetch the precomputed waveform .dat file and decode it
   useEffect(() => {
-    if (!waveformRef.current) return;
+    let isMounted = true;
+    async function fetchPeaks() {
+      try {
+        const res = await fetch(`/api/project/${song.projectId}/song/waveform?file=${encodeURIComponent(song.filePath)}`);
+        if (!res.ok) return;
+        const buffer = await res.arrayBuffer();
+        const decoded = decodeDatFile(buffer);
+        if (isMounted) {
+          setPeaks(decoded);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPeaks();
+    return () => { isMounted = false; };
+  }, [song.filePath, song.projectId]);
+
+  // Setup wavesurfer with precomputed peaks
+  useEffect(() => {
+    if (!waveformRef.current || !peaks) return;
     // Use API proxy endpoint for audio file
     const audioUrl = `/api/project/${song.projectId}/song/audio?file=${encodeURIComponent(song.filePath)}`;
+    // Try both shapes for peaks
+    const peaksShape = Array.isArray(peaks[0]) ? '2D' : '1D';
+    let peaksOption: any = peaks;
+    if (peaksShape === '1D') {
+      peaksOption = [peaks];
+    }
+    const usedDuration = duration || 30;
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: '#60a5fa',
       progressColor: '#2563eb',
-      height: 64,
-      barWidth: 2,
-      barGap: 2,
       cursorColor: '#222',
+      height: 64,
+      minPxPerSec: 2,
       url: audioUrl,
+      peaks: peaksOption,
+      duration: usedDuration,
       plugins: [
         Hover.create({
           lineColor: '#f59e42',
@@ -41,12 +77,15 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     ws.on('play', () => setIsPlaying(true));
     ws.on('pause', () => setIsPlaying(false));
     ws.on('finish', () => setIsPlaying(false));
+    ws.on('decode', (dur: number) => {
+      setDuration(dur);
+    });
     return () => {
       ws.destroy();
       wavesurferRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.filePath, song.projectId]);
+  }, [song.filePath, song.projectId, peaks]);
 
   // Add comment markers as regions
   useEffect(() => {
