@@ -2,6 +2,7 @@
 
 /filestore
 /public/filestore
+/src/backend/audio/public/filestore
 
 # dependencies
 /node_modules
