@@ -56,9 +56,9 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     const usedDuration = duration || 30;
     const ws = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: '#60a5fa',
-      progressColor: '#2563eb',
-      cursorColor: '#222',
+      waveColor: '#606070',
+      progressColor: '#202030',
+      cursorColor: '#0a0a0c',
       height: 64,
       minPxPerSec: 2,
       url: audioUrl,
@@ -147,8 +147,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   };
 
   return (
-    <div className="bg-white rounded shadow p-6">
-      <h2 className="text-xl font-semibold mb-2">{song.title}</h2>
+    <div className="bg-zinc-300 rounded shadow p-6">
+      <h2 className="text-lg mb-2">{song.title}</h2>
       <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(song.uploadDate).toLocaleString()}</div>
       <div className="mb-2">
         <div ref={waveformRef} className="w-full min-w-0" />
@@ -157,7 +157,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={handlePlayPause}
-          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center justify-center"
+          className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 flex items-center justify-center"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
@@ -184,15 +184,15 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         )}
       </div>
       <div>
-        <h3 className="font-semibold mb-2">Comments</h3>
+        <h3 className="mb-2 text-sm">Comments</h3>
         <ul className="mb-2">
           {(comments || []).map((comment: any) => (
             <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
-              <span>
+              <span className='text-sm'>
                 {comment.time !== undefined && comment.time !== null && (
                   <button
                     type="button"
-                    className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs font-mono mr-2 hover:bg-blue-200 focus:outline-none"
+                    className="bg-zinc-200 text-indigo-800 px-1 py-0.5 rounded text-xs font-mono mr-2 hover:bg-blue-200 focus:outline-none"
                     onClick={() => handleSeekToTime(comment.time)}
                   >
                     {formatTime(comment.time)}
@@ -215,7 +215,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           />
           <button
             onClick={handleAddCommentWithTime}
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
             disabled={commentLoading}
           >
             {commentLoading ? 'Adding...' : 'Add'}

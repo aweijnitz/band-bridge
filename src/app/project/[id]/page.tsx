@@ -89,25 +89,25 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-zinc-400 p-8">
       {/* Breadcrumb */}
       <nav className="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
         <ol className="list-reset flex items-center gap-2">
           <li>
-            <Link href="/dashboard" className="text-blue-600 hover:underline">Dashboard</Link>
+            <Link href="/dashboard" className="text-zinc-800 hover:underline">Dashboard</Link>
           </li>
           <li>
             <span className="mx-2">/</span>
           </li>
-          <li className="text-gray-800 font-semibold">Project #{id}</li>
+          <li className="text-zinc-800">Project #{id}</li>
         </ol>
       </nav>
-      <h1 className="text-3xl font-bold mb-6">{project ? project.name : `Project #${id}`}</h1>
+      <h1 className="text-2xl mb-6">{project ? project.name : `Project #${id}`}</h1>
       <div className="mb-8">
         <label className="block mb-2 font-semibold">
           {project?.status !== 'open' ? 'Project not open' : 'Upload new song'}
         </label>
-        <label className={`inline-block px-4 py-2 rounded ${project?.status === 'open' ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}>
+        <label className={`inline-block px-4 py-2 rounded ${project?.status === 'open' ? 'bg-indigo-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}>
           {uploading ? 'Uploading...' : 'Select File'}
           <input
             ref={fileInputRef}

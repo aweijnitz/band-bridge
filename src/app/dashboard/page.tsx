@@ -111,17 +111,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-zinc-400 p-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">{bandName} projects</h1>
+        <h1 className="text-3xl font-semibold">{bandName} projects</h1>
         <button
           onClick={() => {
             setForm({ name: '', owner: '', status: 'open' });
             setShowCreate(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-500"
         >
-          Create Project
+          New Project
         </button>
       </div>
       {error && <div className="mb-4 text-red-600">{error}</div>}
@@ -133,7 +133,7 @@ export default function DashboardPage() {
         <div className="space-y-10">
           {/* OPEN PROJECTS */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Open Projects</h2>
+            <h2 className="text-2xl mb-4">Open Projects</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects
                 .filter(p => p.status === 'open')
@@ -151,7 +151,7 @@ export default function DashboardPage() {
           </div>
           {/* RELEASED PROJECTS */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Released Projects</h2>
+            <h2 className="text-2xl mb-4">Released Projects</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects
                 .filter(p => p.status === 'released')
@@ -169,7 +169,7 @@ export default function DashboardPage() {
           </div>
           {/* ARCHIVED PROJECTS */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Archived Projects</h2>
+            <h2 className="text-2xl mb-4">Archived Projects</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects
                 .filter(p => p.status === 'archived')

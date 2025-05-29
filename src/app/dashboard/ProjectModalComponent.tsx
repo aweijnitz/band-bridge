@@ -41,7 +41,7 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
         />
         <input
           className="w-full mb-2 border rounded px-2 py-1"
-          placeholder="Owner"
+          placeholder="Created by"
           value={form.owner}
           onChange={e => onFormChange({ ...form, owner: e.target.value })}
         />
@@ -54,7 +54,7 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
         </select>
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-          <button onClick={onCreate} className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>
+          <button onClick={onCreate} className="px-4 py-2 bg-indigo-600 text-white rounded" disabled={loading}>
             {loading ? (mode === 'edit' ? 'Saving...' : 'Creating...') : (mode === 'edit' ? 'Save' : 'Create')}
           </button>
         </div>
