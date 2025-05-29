@@ -183,16 +183,15 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
         </button>
-        {projectStatus === 'archived' && (
-          <button
-            onClick={handleDelete}
-            className="p-1 rounded bg-red-500 hover:bg-red-700 text-white"
-            title="Delete song"
-            aria-label="Delete Song"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        )}
+        <button
+          onClick={projectStatus === 'open' ? handleDelete : undefined}
+          className={`p-1 rounded ${projectStatus === 'open' ? 'bg-red-500 hover:bg-red-700 text-white' : 'bg-gray-300 text-gray-400 cursor-not-allowed'}`}
+          title={projectStatus === 'open' ? 'Delete song' : 'Delete only available for open projects'}
+          aria-label="Delete Song"
+          disabled={projectStatus !== 'open'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
       </div>
       {/* Confirmation modal */}
       {showConfirm && (

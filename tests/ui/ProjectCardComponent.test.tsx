@@ -25,18 +25,6 @@ describe('ProjectCardComponent', () => {
     expect(screen.getByText('Edit')).toBeInTheDocument();
   });
 
-  it('does not show Edit button if archived', () => {
-    render(
-      <ProjectCardComponent
-        project={{ ...baseProject, status: 'archived' }}
-        onEdit={jest.fn()}
-        onArchive={jest.fn()}
-        onDelete={jest.fn()}
-      />
-    );
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
-  });
-
   it('shows Delete button only if archived', () => {
     render(
       <ProjectCardComponent

@@ -103,7 +103,7 @@ describe('SongListItemComponent', () => {
     expect(mockOnAddComment).toHaveBeenCalled();
   });
 
-  it('shows Delete button only if projectStatus is archived', () => {
+  it('shows Delete button always, enabled only if projectStatus is open', () => {
     const { rerender } = render(
       <SongListItemComponent
         song={mockSong}
@@ -112,10 +112,12 @@ describe('SongListItemComponent', () => {
         commentInput=""
         onCommentInputChange={mockOnCommentInputChange}
         commentLoading={false}
-        projectStatus="open"
+        projectStatus="archived"
       />
     );
-    expect(screen.queryByLabelText('Delete Song')).not.toBeInTheDocument();
+    const btn = screen.getByLabelText('Delete Song');
+    expect(btn).toBeInTheDocument();
+    expect(btn).toBeDisabled();
 
     rerender(
       <SongListItemComponent
@@ -125,10 +127,12 @@ describe('SongListItemComponent', () => {
         commentInput=""
         onCommentInputChange={mockOnCommentInputChange}
         commentLoading={false}
-        projectStatus="archived"
+        projectStatus="open"
         onDelete={jest.fn()}
       />
     );
-    expect(screen.getByLabelText('Delete Song')).toBeInTheDocument();
+    const btn2 = screen.getByLabelText('Delete Song');
+    expect(btn2).toBeInTheDocument();
+    expect(btn2).not.toBeDisabled();
   });
 }); 
