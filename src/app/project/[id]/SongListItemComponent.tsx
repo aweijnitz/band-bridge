@@ -17,6 +17,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   // Setup wavesurfer with Hover and Regions plugins
   useEffect(() => {
     if (!waveformRef.current) return;
+    // Use API proxy endpoint for audio file
+    const audioUrl = `/api/project/${song.projectId}/song/audio?file=${encodeURIComponent(song.filePath)}`;
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: '#60a5fa',
@@ -25,7 +27,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       barWidth: 2,
       barGap: 2,
       cursorColor: '#222',
-      url: `/filestore/${song.filePath}`,
+      url: audioUrl,
       plugins: [
         Hover.create({
           lineColor: '#f59e42',
@@ -44,16 +46,21 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       wavesurferRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.filePath]);
+  }, [song.filePath, song.projectId]);
 
   // Add comment markers as regions
   useEffect(() => {
     const ws = wavesurferRef.current;
-    if (!ws || !ws.regions) return;
-    ws.regions.clear();
+    // Find the regions plugin instance from the active plugins array
+    const plugins = ws?.getActivePlugins?.();
+    const regions = plugins && Array.isArray(plugins)
+      ? (plugins.find((p: any) => p && p.constructor && p.constructor.name === 'RegionsPlugin') as any)
+      : undefined;
+    if (!ws || !regions) return;
+    regions.clear();
     (comments || []).forEach((comment: any) => {
       if (comment.time !== undefined && comment.time !== null) {
-        ws.regions.addRegion({
+        regions.addRegion({
           start: comment.time,
           end: comment.time + 0.1,
           color: 'rgba(59,130,246,0.5)',

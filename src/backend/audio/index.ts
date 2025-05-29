@@ -33,7 +33,6 @@ function handleUpload(req: any, res: any) {
     // Precompute waveform
     .then(() => {
       const datPath = `${filePath}.dat`;
-      console.log('Precomputing waveform for', filePath);
       return new Promise((resolve, reject) => {
         execFile('audiowaveform', ['-i', filePath, '-o', datPath], (err) => {
           if (err) reject(err);
