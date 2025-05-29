@@ -1,10 +1,16 @@
 import { POST } from '../../src/app/api/project/[id]/song/route';
 
-// Mock fs/promises to avoid writing files during tests
-jest.mock('fs/promises', () => ({
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  writeFile: jest.fn().mockResolvedValue(undefined),
-}));
+// Mock node-fetch to simulate audio microservice
+jest.mock('node-fetch', () => jest.fn());
+import fetch from 'node-fetch';
+
+// Mock form-data to avoid actual FormData usage
+jest.mock('form-data', () => {
+  return jest.fn().mockImplementation(() => ({
+    append: jest.fn(),
+    getHeaders: jest.fn().mockReturnValue({}),
+  }));
+});
 
 // Mock PrismaClient to avoid real DB calls
 jest.mock('../../src/generated/prisma', () => {
@@ -31,6 +37,10 @@ type MockFile = {
 };
 
 describe('POST /api/project/[id]/song (unit)', () => {
+  beforeEach(() => {
+    ((fetch as any) as jest.Mock).mockReset();
+  });
+
   function mockFile(name: string, content: string): MockFile {
     return {
       name,
@@ -49,9 +59,14 @@ describe('POST /api/project/[id]/song (unit)', () => {
   }
 
   it('should upload a song with file and projectId', async () => {
+    ((fetch as any) as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ fileName: '1710000000000_mysong.mp3' }),
+      statusText: 'OK',
+    });
     const file = mockFile('mysong.mp3', 'dummydata');
     const req = { formData: async () => mockFormData(file) } as any;
-    const params = { id: '1' };
+    const params = Promise.resolve({ id: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(201);
     const data = await res.json();
@@ -62,7 +77,7 @@ describe('POST /api/project/[id]/song (unit)', () => {
 
   it('should return 400 for missing file', async () => {
     const req = { formData: async () => mockFormData(null) } as any;
-    const params = { id: '1' };
+    const params = Promise.resolve({ id: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(400);
     const data = await res.json();

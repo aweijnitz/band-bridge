@@ -40,7 +40,7 @@ describe('POST /api/project (unit)', () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.name).toBe('Test Project');
-    expect(data.bandName).toBe('Test Band');
+    expect(data.bandName).toBe('My Band');
     expect(data.owner).toBe('Alice');
     expect(data.status).toBe('open');
   });

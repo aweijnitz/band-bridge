@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
-import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 
 const prisma = new PrismaClient();
-const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -33,12 +32,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!file || isNaN(projectId)) {
       return NextResponse.json({ error: 'Missing file or invalid project id' }, { status: 400 });
     }
-    // Save file to public/filestore
-    await mkdir(FILESTORE_PATH, { recursive: true });
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = path.join(FILESTORE_PATH, fileName);
-    const arrayBuffer = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(arrayBuffer));
+    // Forward file to audio microservice
+    const uploadForm = new FormData();
+    uploadForm.append('file', file, file.name);
+    const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+    const uploadRes = await fetch(`${audioServiceUrl}/upload`, {
+      method: 'POST',
+      body: uploadForm as any,
+      // @ts-ignore
+      headers: (uploadForm as any).getHeaders ? (uploadForm as any).getHeaders() : {},
+    });
+    if (!uploadRes.ok) {
+      const err = await uploadRes.json().catch(() => ({}));
+      return NextResponse.json({ error: 'Audio service upload failed', details: err.error || uploadRes.statusText }, { status: 500 });
+    }
+    const { fileName } = await uploadRes.json();
     // Use file name (without extension) as title if not provided
     if (!title) {
       title = file.name.replace(/\.[^/.]+$/, '');
