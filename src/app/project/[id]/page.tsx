@@ -2,6 +2,7 @@
 
 import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigationComponent';
 import SongListItemComponent from './SongListItemComponent';
 
 type ParamsType = Promise<{ id: string }> | { id: string };
@@ -106,18 +107,7 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
 
   return (
     <div className="min-h-screen bg-zinc-400 p-8">
-      {/* Breadcrumb */}
-      <nav className="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
-        <ol className="list-reset flex items-center gap-2">
-          <li>
-            <Link href="/dashboard" className="text-zinc-800 hover:underline">Dashboard</Link>
-          </li>
-          <li>
-            <span className="mx-2">/</span>
-          </li>
-          <li className="text-zinc-800">Project #{id}</li>
-        </ol>
-      </nav>
+      <BreadcrumbNavigationComponent projectId={id} projectName={project?.name} />
       <h1 className="text-2xl mb-6">{project ? project.name : `Project #${id}`}</h1>
       <div className="mb-8">
         <label className="block mb-2 font-semibold">

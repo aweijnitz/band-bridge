@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
 import Regions from 'wavesurfer.js/dist/plugins/regions.esm.js';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -22,6 +24,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   const [peaks, setPeaks] = useState<number[] | null>(null);
   const [duration, setDuration] = useState<number | undefined>(undefined);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const pathname = typeof window !== 'undefined' ? window.location.origin : '';
 
   // Fetch the precomputed waveform .dat file and decode it
   useEffect(() => {
@@ -159,6 +163,13 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     document.body.removeChild(link);
   };
 
+  const handleShare = async () => {
+    const link = `${window.location.origin}/project/${song.projectId}/song/${song.id}`;
+    await navigator.clipboard.writeText(link);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1800);
+  };
+
   const handleDelete = () => {
     setShowConfirm(true);
   };
@@ -184,13 +195,25 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
         </button>
         <button
+          onClick={handleShare}
+          className="p-1 rounded bg-indigo-500 hover:bg-indigo-700 text-white"
+          title="Copy link to song details"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7h2a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8a2 2 0 012-2h2" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15V3m0 0l-3.5 3.5M12 3l3.5 3.5" />
+          </svg>
+        </button>
+        <button
           onClick={projectStatus === 'open' ? handleDelete : undefined}
           className={`p-1 rounded ${projectStatus === 'open' ? 'bg-red-500 hover:bg-red-700 text-white' : 'bg-gray-300 text-gray-400 cursor-not-allowed'}`}
           title={projectStatus === 'open' ? 'Delete song' : 'Delete only available for open projects'}
           aria-label="Delete Song"
           disabled={projectStatus !== 'open'}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v2H9V4a1 1 0 011-1zm-7 4h18" />
+          </svg>
         </button>
       </div>
       {/* Confirmation modal */}
@@ -206,7 +229,16 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           </div>
         </div>
       )}
-      <h2 className="text-lg mb-2">{song.title}</h2>
+      {showToast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-indigo-700 text-white px-4 py-2 rounded shadow-lg transition-all duration-300 animate-fade-in-out z-50">
+          Link copied to clipboard
+        </div>
+      )}
+      <h2 className="text-lg mb-2">
+        <Link href={`/project/${song.projectId}/song/${song.id}`} className="text-indigo-950 hover:underline">
+          {song.title}
+        </Link>
+      </h2>
       <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(song.uploadDate).toLocaleString()}</div>
       <div className="mb-2">
         <div ref={waveformRef} className="w-full min-w-0" />

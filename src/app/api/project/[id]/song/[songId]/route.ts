@@ -4,6 +4,27 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 
 /**
+ * Get a single song by id and projectId
+ */
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string, songId: string }> }) {
+  try {
+    const { id, songId } = await params;
+    const projectId = parseInt(id, 10);
+    const songIdNum = parseInt(songId, 10);
+    if (isNaN(projectId) || isNaN(songIdNum)) {
+      return NextResponse.json({ error: 'Invalid project or song id' }, { status: 400 });
+    }
+    const song = await prisma.song.findUnique({ where: { id: songIdNum } });
+    if (!song || song.projectId !== projectId) {
+      return NextResponse.json({ error: 'Song not found in project' }, { status: 404 });
+    }
+    return NextResponse.json(song);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch song', details: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
+/**
  * Delete a song and all its comments
  * @param req - The request object
  * @param params - The parameters object
