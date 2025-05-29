@@ -41,7 +41,7 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
         />
         <input
           className="w-full mb-2 border rounded px-2 py-1"
-          placeholder="Created by"
+          placeholder="Owner"
           value={form.owner}
           onChange={e => onFormChange({ ...form, owner: e.target.value })}
         />

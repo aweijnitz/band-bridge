@@ -34,6 +34,14 @@ const makeReq = (id = '123') => ({
 let findUniqueImpl = jest.fn().mockResolvedValue({ id: 123, name: 'Test', bandName: 'Band', owner: 'Owner', status: 'archived', createdAt: new Date().toISOString() });
 
 describe('DELETE /api/project/[id]', () => {
+  beforeAll(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  });
+  afterAll(() => {
+    // @ts-ignore
+    delete global.fetch;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     // By default, return a valid project
@@ -42,18 +50,30 @@ describe('DELETE /api/project/[id]', () => {
 
   it('deletes project, songs, comments, and files', async () => {
     const req = {} as any;
-    const params = { id: '123' };
+    const params = Promise.resolve({ id: '123' });
     const res = await DELETE(req, { params });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(mockUnlink).toHaveBeenCalledWith(expect.stringContaining('song1.mp3'));
-    expect(mockUnlink).toHaveBeenCalledWith(expect.stringContaining('song2.mp3'));
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/delete-song'),
+      expect.objectContaining({
+        method: 'DELETE',
+        body: expect.stringContaining('song1.mp3'),
+      })
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/delete-song'),
+      expect.objectContaining({
+        method: 'DELETE',
+        body: expect.stringContaining('song2.mp3'),
+      })
+    );
   });
 
   it('returns 404 if project not found', async () => {
     const req = {} as any;
-    const params = { id: '999' };
+    const params = Promise.resolve({ id: '999' });
     // Patch findUnique to return null
     findUniqueImpl = jest.fn().mockResolvedValue(null);
     // Patch project.delete to throw
@@ -80,7 +100,7 @@ describe('DELETE /api/project/[id]', () => {
   it('ignores file deletion errors', async () => {
     mockUnlink.mockRejectedValueOnce(new Error('File not found'));
     const req = {} as any;
-    const params = { id: '123' };
+    const params = Promise.resolve({ id: '123' });
     const res = await DELETE(req, { params });
     expect(res.status).toBe(200);
     // Should still succeed
