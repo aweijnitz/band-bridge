@@ -34,7 +34,7 @@ function handleUpload(req: any, res: any) {
     .then(() => {
       const datPath = `${filePath}.dat`;
       return new Promise((resolve, reject) => {
-        execFile('audiowaveform', ['-i', filePath, '-o', datPath], (err) => {
+        execFile('audiowaveform', ['-i', filePath, '-o', datPath, '--pixels-per-second', '1024'], (err) => {
           if (err) reject(err);
           else resolve(undefined);
         });
