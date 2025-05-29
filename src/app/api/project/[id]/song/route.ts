@@ -6,6 +6,12 @@ import { NextRequest as NodeNextRequest } from 'next/server';
 
 const prisma = new PrismaClient();
 
+/**
+ * Get all songs for a project
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const url = new URL(req.url);
   const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
@@ -48,6 +54,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * Upload a song to a project
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: idStr } = await params;

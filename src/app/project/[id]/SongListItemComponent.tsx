@@ -15,12 +15,13 @@ function decodeDatFile(buffer: ArrayBuffer): number[] {
   return Array.from(floatArray);
 }
 
-export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, projectStatus, onDelete }: any) {
+export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, projectStatus, onDeleteSong }: any) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [peaks, setPeaks] = useState<number[] | null>(null);
   const [duration, setDuration] = useState<number | undefined>(undefined);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Fetch the precomputed waveform .dat file and decode it
   useEffect(() => {
@@ -146,8 +147,62 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     }
   };
 
+  const handleDownload = () => {
+    const url = `/api/project/${song.projectId}/song/audio?file=${encodeURIComponent(song.filePath)}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = song.filePath;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDelete = () => {
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowConfirm(false);
+    if (onDeleteSong) onDeleteSong(song.id);
+  };
+
+  const cancelDelete = () => {
+    setShowConfirm(false);
+  };
+
   return (
-    <div className="bg-zinc-300 rounded shadow p-6">
+    <div className="bg-zinc-300 rounded shadow p-6 relative">
+      {/* Top right buttons */}
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
+        <button
+          onClick={handleDownload}
+          className="p-1 rounded bg-indigo-500 hover:bg-indigo-700 text-white"
+          title="Download song"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+        </button>
+        <button
+          onClick={projectStatus === 'open' ? handleDelete : undefined}
+          className={`p-1 rounded ${projectStatus === 'open' ? 'bg-red-500 hover:bg-red-700 text-white' : 'bg-gray-300 text-gray-400 cursor-not-allowed'}`}
+          title={projectStatus === 'open' ? 'Delete song' : 'Delete only available for open projects'}
+          disabled={projectStatus !== 'open'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      {/* Confirmation modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow w-full max-w-xs">
+            <h2 className="text-lg font-bold mb-4">Are you sure?</h2>
+            <div className="mb-4 text-gray-700">This will delete the song and all associated comments. This action cannot be undone.</div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={cancelDelete} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+              <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
       <h2 className="text-lg mb-2">{song.title}</h2>
       <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(song.uploadDate).toLocaleString()}</div>
       <div className="mb-2">
@@ -173,15 +228,6 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
         </button>
-        {projectStatus === 'archived' && (
-          <button
-            onClick={() => onDelete && onDelete(song.id)}
-            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 flex items-center justify-center"
-            aria-label="Delete Song"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        )}
       </div>
       <div>
         <h3 className="mb-2 text-sm">Comments</h3>

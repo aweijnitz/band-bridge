@@ -10,6 +10,12 @@ const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
     : path.join(process.cwd(), process.env.AUDIO_FILESTORE_PATH)
   : path.join(process.cwd(), 'public', 'filestore');
 
+/**
+ * Get a project by id
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: idStr } = await params;
@@ -27,6 +33,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * Update a project
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: idStr } = await params;
@@ -57,6 +69,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * Delete a project and all its songs
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: idStr } = await params;

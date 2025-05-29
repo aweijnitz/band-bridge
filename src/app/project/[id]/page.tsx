@@ -88,6 +88,22 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
     setCommentLoading((prev) => ({ ...prev, [songId]: false }));
   };
 
+  const handleDeleteSong = async (songId: number) => {
+    setError(null);
+    const res = await fetch(`/api/project/${id}/song/${songId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setSongs((prev) => prev.filter((s) => s.id !== songId));
+      setComments((prev) => {
+        const newComments = { ...prev };
+        delete newComments[songId];
+        return newComments;
+      });
+    } else {
+      const err = await res.json();
+      setError(err.error || 'Failed to delete song');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-400 p-8">
       {/* Breadcrumb */}
@@ -136,7 +152,7 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
               onCommentInputChange={handleCommentChange}
               commentLoading={commentLoading[song.id]}
               projectStatus={project?.status}
-              onDelete={project?.status === 'archived' ? ((songId: number) => {/* TODO: implement delete logic */}) : undefined}
+              onDeleteSong={project?.status === 'open' ? handleDeleteSong : undefined}
             />
           ))}
         </div>

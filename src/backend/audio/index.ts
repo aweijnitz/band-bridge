@@ -50,6 +50,7 @@ app.post('/upload', handleUpload);
 // Delete a single song file and its .dat file
 app.delete('/delete-song', async (req: Request, res: Response) => {
   const { fileName } = req.body;
+  console.log('Deleting song', fileName);
   if (!fileName) {
     res.status(400).json({ error: 'Missing fileName' });
     return;

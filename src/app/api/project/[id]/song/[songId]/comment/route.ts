@@ -3,6 +3,12 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
+/**
+ * Get all comments for a song
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
   try {
     const { songId: songIdStr } = await params;
@@ -20,6 +26,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ song
   }
 }
 
+/**
+ * Add a comment to a song
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
   try {
     const { songId: songIdStr } = await params;
