@@ -6,7 +6,11 @@ import { execFile } from 'child_process';
 
 const app = express();
 const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
-const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
+const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
+  ? path.isAbsolute(process.env.AUDIO_FILESTORE_PATH)
+    ? process.env.AUDIO_FILESTORE_PATH
+    : path.join(process.cwd(), process.env.AUDIO_FILESTORE_PATH)
+  : path.join(process.cwd(), 'public', 'filestore');
 
 app.use(fileUpload());
 app.use(express.json());
@@ -43,14 +47,46 @@ function handleUpload(req: any, res: any) {
 
 app.post('/upload', handleUpload);
 
-// Delete audio file and related data
-app.delete('/delete/:fileName', (req: Request, res: Response) => {
+
+// Delete a single song file and its .dat file
+app.delete('/delete-song', async (req: Request, res: Response) => {
+  const { fileName } = req.body;
+  if (!fileName) {
+    res.status(400).json({ error: 'Missing fileName' });
+    return;
+  }
+  const filePath = path.join(FILESTORE_PATH, fileName);
+  try {
+    await fs.unlink(filePath);
+    try {
+      await fs.unlink(filePath + '.dat');
+    } catch {}
+    res.json({ success: true, deleted: fileName });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete file', details: err?.message || String(err) });
+  }
+});
+
+// Serve static files (audio and waveform data)
+app.get('/files/:fileName', (req: Request, res: Response) => {
   const { fileName } = req.params;
   const filePath = path.join(FILESTORE_PATH, fileName);
-  fs.unlink(filePath)
-    .then(() => fs.unlink(filePath + '.dat').catch(() => {}))
-    .then(() => res.json({ success: true }))
-    .catch((err) => res.status(500).json({ error: 'Failed to delete file', details: err instanceof Error ? err.message : err }));
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).json({ error: 'File not found' });
+    }
+  });
+});
+
+// Serve waveform data files
+app.get('/files/:fileName.dat', (req: Request, res: Response) => {
+  const { fileName } = req.params;
+  const datPath = path.join(FILESTORE_PATH, fileName + '.dat');
+  res.sendFile(datPath, (err) => {
+    if (err) {
+      res.status(404).json({ error: 'Waveform data not found' });
+    }
+  });
 });
 
 app.listen(PORT, () => {

@@ -18,9 +18,11 @@ services:
       - db
     environment:
       - AUDIO_SERVICE_PORT=4001
+      - AUDIO_FILESTORE_PATH=${AUDIO_FILESTORE_PATH}
     ports:
       - '4001:4001'
     volumes:
-      - ./public/filestore:/app/public/filestore
+      - audio_filestore:${AUDIO_FILESTORE_PATH}
 volumes:
-  db_data: 
+  db_data:
+  audio_filestore: 

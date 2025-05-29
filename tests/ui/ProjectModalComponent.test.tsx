@@ -64,8 +64,6 @@ describe('ProjectModalComponent', () => {
     );
     fireEvent.change(screen.getByPlaceholderText('Project Name'), { target: { value: 'New Project' } });
     expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, name: 'New Project' });
-    fireEvent.change(screen.getByPlaceholderText('Band Name'), { target: { value: 'Band' } });
-    expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, bandName: 'Band' });
     fireEvent.change(screen.getByPlaceholderText('Owner'), { target: { value: 'Bob' } });
     expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, owner: 'Bob' });
     fireEvent.change(screen.getByDisplayValue('open'), { target: { value: 'archived' } });

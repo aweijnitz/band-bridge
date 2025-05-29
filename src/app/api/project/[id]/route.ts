@@ -4,7 +4,11 @@ import { unlink } from 'fs/promises';
 import path from 'path';
 
 const prisma = new PrismaClient();
-const FILESTORE_PATH = path.join(process.cwd(), 'public', 'filestore');
+const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
+  ? path.isAbsolute(process.env.AUDIO_FILESTORE_PATH)
+    ? process.env.AUDIO_FILESTORE_PATH
+    : path.join(process.cwd(), process.env.AUDIO_FILESTORE_PATH)
+  : path.join(process.cwd(), 'public', 'filestore');
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -67,21 +71,27 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     // Find all songs for the project
     const songs = await prisma.song.findMany({ where: { projectId: id } });
-    const songIds = songs.map(song => song.id);
-    // Delete all comments for these songs
-    await prisma.comment.deleteMany({ where: { songId: { in: songIds } } });
-    // Delete all songs for the project
-    await prisma.song.deleteMany({ where: { projectId: id } });
-    // Delete all song files from the filesystem
+    const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+    // Delete all song files via audio microservice
     for (const song of songs) {
       if (song.filePath) {
         try {
-          await unlink(path.join(FILESTORE_PATH, song.filePath));
+          await fetch(`${audioServiceUrl}/delete-song`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: song.filePath }),
+          });
         } catch (err) {
-          // Ignore file not found errors
+          // Log and continue
+          console.error('Failed to delete song file via audio service', song.filePath, err);
         }
       }
     }
+    // Delete all comments for these songs
+    const songIds = songs.map(song => song.id);
+    await prisma.comment.deleteMany({ where: { songId: { in: songIds } } });
+    // Delete all songs for the project
+    await prisma.song.deleteMany({ where: { projectId: id } });
     // Delete the project
     const deleted = await prisma.project.delete({ where: { id } });
     return NextResponse.json({ success: true, deleted });
