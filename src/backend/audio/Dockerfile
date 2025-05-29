@@ -1,5 +1,5 @@
 # ---- audiowaveform builder ----
-FROM debian:bullseye as audiowaveform-builder
+FROM debian:bullseye AS audiowaveform-builder
 
 RUN apt-get update && \
     apt-get install -y --fix-missing ffmpeg curl git cmake g++ libboost-all-dev libtag1-dev libmad0-dev libsndfile1-dev zlib1g-dev pkg-config make libgd-dev libid3tag0-dev
@@ -14,7 +14,7 @@ RUN git clone https://github.com/bbc/audiowaveform.git . && \
     make
 
 # ---- app builder ----
-FROM node:20-bullseye as app-builder
+FROM node:20-bullseye AS app-builder
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ WORKDIR /app
 
 # Install runtime dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg libsndfile1 && \
+    apt-get install -y --no-install-recommends ffmpeg libsndfile1 libgd3 libmad0 libid3tag0 libboost-program-options1.74.0 libboost-filesystem1.74.0 libboost-regex1.74.0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy audiowaveform binary from builder
