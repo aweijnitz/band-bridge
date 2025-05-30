@@ -3,9 +3,16 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import ProjectCardComponent from './ProjectCardComponent';
 import ProjectModalComponent from './ProjectModalComponent';
+import { useRouter } from 'next/navigation';
+import LoginFormComponent from "../components/LoginFormComponent";
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
-const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
+// const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
+
+type Band = {
+  id: number;
+  name: string;
+};
 
 type ProjectStatus = typeof PROJECT_STATUS[number];
 
@@ -16,20 +23,71 @@ type Project = {
   owner: string;
   status: ProjectStatus;
   createdAt: string;
+  bandId?: number;
 };
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [bands, setBands] = useState<Band[]>([]);
+  const [selectedBand, setSelectedBand] = useState<Band | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
-  const [form, setForm] = useState<{ name: string; owner: string; status: ProjectStatus }>({ name: '', owner: '', status: 'open' });
+  const [form, setForm] = useState<{ name: string; status: ProjectStatus; bandId?: number }>({ name: '', status: 'open', bandId: 0 });
   const [error, setError] = useState<string | null>(null);
   const createNameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
+  // Check authentication on mount
   useEffect(() => {
-    fetch('/api/project', { method: 'GET' })
+    fetch('/api/auth/session').then(res => {
+      if (!res.ok) {
+        setIsLoggedIn(false);
+      } else {
+        setIsLoggedIn(true);
+      }
+    });
+  }, []);
+
+  // Fetch bands and userId for the current user, only if logged in
+  useEffect(() => {
+    if (isLoggedIn !== true) return; // Only run if authenticated
+    fetch('/api/mine')
+      .then(res => {
+        if (!res.ok) {
+          // If not authenticated, force login
+          setIsLoggedIn(false);
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (!data) return;
+        setUserId(data.userId);
+        if (!data.bands) {
+          setBands([]);
+          setSelectedBand(null);
+          return;
+        }
+        const bands = data.bands.map((b: any) => ({ id: b.bandId, name: b.bandName }));
+        setBands(bands);
+        if (bands.length === 1) {
+          setSelectedBand(bands[0]);
+        } else if (bands.length > 1) {
+          setSelectedBand(bands[0]);
+        }
+      })
+      .catch(() => setError('Failed to load bands'));
+  }, [isLoggedIn]);
+
+  // Fetch projects for the selected band
+  useEffect(() => {
+    if (!selectedBand) return;
+    setLoading(true);
+    fetch(`/api/project?bandId=${selectedBand.id}`, { method: 'GET' })
       .then(res => res.json())
       .then(data => {
         setProjects(data);
@@ -37,7 +95,7 @@ export default function DashboardPage() {
       })
       .catch(() => setError('Failed to load projects'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedBand]);
 
   useEffect(() => {
     if (showCreate && createNameInputRef.current) {
@@ -53,16 +111,25 @@ export default function DashboardPage() {
 
   const handleCreate = async () => {
     setError(null);
+    if (!userId) {
+      setError('User not loaded');
+      return;
+    }
     const res = await fetch('/api/project', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        ownerId: userId,
+        status: form.status,
+        bandId: form.bandId
+      }),
     });
     if (res.ok) {
       const newProject = await res.json();
       setProjects((prev) => [...prev, newProject]);
       setShowCreate(false);
-      setForm({ name: '', owner: '', status: 'open' });
+      setForm({ name: '', status: 'open', bandId: 0 });
     } else {
       const err = await res.json();
       setError(err.error || 'Failed to create project');
@@ -98,6 +165,7 @@ export default function DashboardPage() {
       setError(err.error || 'Failed to archive project');
     }
   };
+  
 
   const handleDelete = async (id: number) => {
     setError(null);
@@ -110,16 +178,45 @@ export default function DashboardPage() {
     }
   };
 
+  console.log('isLoggedIn', isLoggedIn);
+  if (isLoggedIn === false) {
+    return <LoginFormComponent redirect="/dashboard" />;
+  }
+  if (isLoggedIn === null) {
+    // Optionally show a loading spinner here
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-zinc-400 p-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-semibold">{bandName} projects</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-semibold">
+            {bands.length > 1 ? (
+              <select
+                className="text-2xl font-semibold bg-zinc-200 rounded px-2 py-1"
+                value={selectedBand?.id || ''}
+                onChange={e => {
+                  const band = bands.find(b => b.id === Number(e.target.value));
+                  if (band) setSelectedBand(band);
+                }}
+              >
+                {bands.map(band => (
+                  <option key={band.id} value={band.id}>{band.name}</option>
+                ))}
+              </select>
+            ) : (
+              bands[0]?.name || 'My Band'
+            )} projects
+          </h1>
+        </div>
         <button
           onClick={() => {
-            setForm({ name: '', owner: '', status: 'open' });
+            setForm({ name: '', status: 'open', bandId: selectedBand?.id ?? 0 });
             setShowCreate(true);
           }}
           className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-500"
+          disabled={!selectedBand}
         >
           New Project
         </button>
@@ -142,7 +239,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -160,7 +257,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -178,7 +275,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, owner: p.owner, status: p.status as ProjectStatus }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -189,8 +286,8 @@ export default function DashboardPage() {
       )}
       <ProjectModalComponent
         open={showCreate}
-        form={form}
-        bandName={bandName}
+        form={{ ...form, bandId: form.bandId ?? 0 }}
+        bandName={bands.length > 1 ? selectedBand?.name || 'My Band' : 'My Band'}
         onFormChange={setForm}
         onClose={() => setShowCreate(false)}
         onCreate={handleCreate}
@@ -200,8 +297,8 @@ export default function DashboardPage() {
       />
       <ProjectModalComponent
         open={!!showEdit}
-        form={form}
-        bandName={bandName}
+        form={{ ...form, bandId: form.bandId ?? 0 }}
+        bandName={bands.length > 1 ? selectedBand?.name || 'My Band' : 'My Band'}
         onFormChange={setForm}
         onClose={() => setShowEdit(null)}
         onCreate={handleEdit}
@@ -211,4 +308,15 @@ export default function DashboardPage() {
       />
     </div>
   );
+}
+
+export async function getCurrentUserInfo() {
+  try {
+    const res = await fetch('/api/auth/session');
+    if (!res.ok) return null;
+    const { userId, userName, bandName, bandId } = await res.json();
+    return { userId, userName, bandName, bandId };
+  } catch {
+    return null;
+  }
 } 

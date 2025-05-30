@@ -4,6 +4,8 @@ import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigationComponent';
 import SongListItemComponent from './SongListItemComponent';
+import { useRouter } from 'next/navigation';
+import LoginFormComponent from "../../components/LoginFormComponent";
 
 type ParamsType = Promise<{ id: string }> | { id: string };
 function isPromise(obj: any): obj is Promise<any> {
@@ -21,26 +23,66 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
   const [commentLoading, setCommentLoading] = useState<{ [songId: number]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [project, setProject] = useState<any>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const router = useRouter();
+  
+  useEffect(() => {
+    fetch('/api/auth/session').then(res => {
+      if (!res.ok) {
+        setIsLoggedIn(false);
+      } else {
+        setIsLoggedIn(true);
+      }
+    });
+  }, [id]);
 
   useEffect(() => {
+    if (isLoggedIn !== true) return;
+
     fetch(`/api/project/${id}`)
-      .then(res => res.json())
-      .then(data => setProject(data))
-      .catch(() => setProject(null));
-    fetch(`/api/project/${id}/song`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          setProject(null);
+          return null;
+        }
+        return res.json();
+      })
       .then(data => {
+        if (data) setProject(data);
+      })
+      .catch(() => setProject(null));
+
+    fetch(`/api/project/${id}/song`)
+      .then(res => {
+        if (!res.ok) {
+          setError('Failed to load songs');
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (!data) return;
         setSongs(data);
         // Fetch comments for each song
         data.forEach((song: any) => {
           fetch(`/api/project/${id}/song/${song.id}/comment`)
-            .then(res => res.json())
+            .then(res => {
+              if (!res.ok) return [];
+              return res.json();
+            })
             .then(commentsData => setComments(prev => ({ ...prev, [song.id]: commentsData })));
         });
       })
       .catch(() => setError('Failed to load songs'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isLoggedIn]);
+
+  if (isLoggedIn === false) {
+    return <LoginFormComponent redirect={`/project/${id}`} />;
+  }
+  if (isLoggedIn === null) {
+    return null;
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -113,7 +155,10 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
         <label className="block mb-2 font-semibold">
           {project?.status !== 'open' ? 'Project not open' : 'Upload new song'}
         </label>
-        <label className={`inline-block px-4 py-2 rounded ${project?.status === 'open' ? 'bg-indigo-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}>
+        <label
+          className={`inline-block px-4 py-2 rounded ${project?.status === 'open' && isLoggedIn ? 'bg-indigo-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+          title={isLoggedIn ? (project?.status === 'open' ? 'Upload new song' : 'Project not open') : 'Sign in to upload'}
+        >
           {uploading ? 'Uploading...' : 'Select File'}
           <input
             ref={fileInputRef}
@@ -121,7 +166,7 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
             accept="audio/mp3,audio/wav"
             className="hidden"
             onChange={handleFileChange}
-            disabled={uploading || project?.status !== 'open'}
+            disabled={uploading || project?.status !== 'open' || !isLoggedIn}
           />
         </label>
       </div>

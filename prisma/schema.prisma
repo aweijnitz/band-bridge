@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -14,12 +15,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  apiKeys      ApiKey[]
+  bands        UserBand[]
+  projects     Project[] @relation("UserProjects")
+  comments     Comment[]
+  sessions     Session[]
+}
+
+model Band {
+  id      Int        @id @default(autoincrement())
+  name    String
+  members UserBand[]
+  projects Project[]
+}
+
+model UserBand {
+  id     Int   @id @default(autoincrement())
+  user   User  @relation(fields: [userId], references: [id])
+  userId Int
+  band   Band  @relation(fields: [bandId], references: [id])
+  bandId Int
+  @@unique([userId, bandId])
+}
+
+model ApiKey {
+  id        Int      @id @default(autoincrement())
+  keyHash   String   // Store only the hash of the API key
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+}
+
 model Project {
   id         Int      @id @default(autoincrement())
   name       String
   createdAt  DateTime @default(now())
-  bandName   String
-  owner      String
+  band       Band?    @relation(fields: [bandId], references: [id])
+  bandId     Int?
+  owner      User     @relation("UserProjects", fields: [ownerId], references: [id])
+  ownerId    Int
   status     ProjectStatus
   songs      Song[]
 }
@@ -44,7 +83,18 @@ model Comment {
   id        Int      @id @default(autoincrement())
   song      Song     @relation(fields: [songId], references: [id])
   songId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
   text      String
   createdAt DateTime @default(now())
   time      Float?
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  sessionId String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }

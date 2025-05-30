@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
+import { requireSession } from '../../../../auth/requireSession';
 
 const prisma = new PrismaClient();
 
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
  * @returns A response object
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string, songId: string }> }) {
+  await requireSession();
   try {
     const { id, songId } = await params;
     const projectId = parseInt(id, 10);

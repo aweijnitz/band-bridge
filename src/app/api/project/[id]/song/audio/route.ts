@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSession } from '../../../../auth/requireSession';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';

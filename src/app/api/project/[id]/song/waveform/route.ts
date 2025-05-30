@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSession } from '../../../../auth/requireSession';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  //await requireSession();
   const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
   const fileName = req.nextUrl.searchParams.get('file');
   if (!fileName) {

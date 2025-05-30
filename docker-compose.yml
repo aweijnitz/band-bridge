@@ -23,6 +23,18 @@ services:
       - '4001:4001'
     volumes:
       - audio_filestore:${AUDIO_FILESTORE_PATH}
+  admin:
+    build:
+      context: ./src/backend/admin
+    restart: always
+    env_file:
+      - ./src/backend/admin/.env
+    ports:
+      - "4002:4002"
+    depends_on:
+      - db
+    volumes:
+      - ./src/backend/admin/.env:/app/.env:ro
 volumes:
   db_data:
   audio_filestore: 

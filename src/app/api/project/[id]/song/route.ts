@@ -3,6 +3,7 @@ import { PrismaClient } from '@/generated/prisma';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { NextRequest as NodeNextRequest } from 'next/server';
+import { requireSession } from '../../../auth/requireSession';
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
  * @returns A response object
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await requireSession();
   try {
     const { id: idStr } = await params;
     console.log('[Song Upload] Received params:', { idStr });
@@ -130,5 +132,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (error) {
     console.error('[Song Upload] Unexpected error', error);
     return NextResponse.json({ error: 'Failed to upload song', details: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
+/**
+ * Delete all songs for a project
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await requireSession();
+  try {
+    const { id: idStr } = await params;
+    const projectId = parseInt(idStr, 10);
+    if (isNaN(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
+    }
+    const songs = await prisma.song.findMany({
+      where: { projectId },
+    });
+    if (songs.length === 0) {
+      return NextResponse.json({ error: 'No songs found for the project' }, { status: 404 });
+    }
+    await prisma.song.deleteMany({
+      where: { projectId },
+    });
+    return NextResponse.json({ message: 'All songs deleted successfully' }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete songs', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 } 

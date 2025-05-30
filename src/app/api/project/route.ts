@@ -1,26 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, ProjectStatus } from '@/generated/prisma';
 import path from 'path';
+import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();
 
-// Band configuration (keep in sync with dashboard)
-const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
-
-export async function GET() {
+/** Get projects for a band 
+ * 
+*/
+export async function GET(req: NextRequest) {
+  const bandIdParam = req.nextUrl.searchParams.get('bandId');
+  const bandId = bandIdParam ? parseInt(bandIdParam, 10) : NaN;
+  if (!bandIdParam || isNaN(bandId)) {
+    return NextResponse.json({ error: 'Missing or invalid bandId' }, { status: 400 });
+  }
   try {
-    const projects = await prisma.project.findMany({ orderBy: { createdAt: 'desc' } });
+    const projects = await prisma.project.findMany({
+      where: { bandId },
+      orderBy: { createdAt: 'desc' }
+    });
     return NextResponse.json(projects);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch projects', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 }
 
+/** Create a project
+ * 
+ * @param req {
+        name,
+        ownerId,
+        status,
+        bandId,
+      }
+ * @returns 
+ */
 export async function POST(req: NextRequest) {
+  await requireSession();
   try {
     const body = await req.json();
-    const { name, owner, status } = body;
-    if (!name || !owner || !status) {
+    const { name, ownerId, status, bandId } = body;
+    if (!name || !ownerId || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (!['open', 'released', 'archived'].includes(status)) {
@@ -29,13 +49,14 @@ export async function POST(req: NextRequest) {
     const project = await prisma.project.create({
       data: {
         name,
-        bandName: bandName,
-        owner,
+        ownerId,
         status,
+        bandId,
       },
     });
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create project', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
-} 
+}
+

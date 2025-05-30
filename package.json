@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
+    "generate:schema": "npx prisma generate",
     "start": "next start",
     "lint": "next lint",
     "test": "npm run test:api && npm run test:ui",
@@ -17,10 +18,12 @@
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.2",
     "@types/express-fileupload": "^1.5.1",
     "@types/form-data": "^2.5.2",
     "@types/node-fetch": "^2.6.12",
+    "bcrypt": "^6.0.0",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.1",
     "form-data": "^4.0.2",

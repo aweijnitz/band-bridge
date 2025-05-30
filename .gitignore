@@ -3,6 +3,10 @@
 /filestore
 /public/filestore
 /src/backend/audio/public/filestore
+/src/backend/admin/generated
+/src/backend/admin/dist
+
+**node_modules**
 
 # dependencies
 /node_modules

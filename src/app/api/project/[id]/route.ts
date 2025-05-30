@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { unlink } from 'fs/promises';
 import path from 'path';
+import { requireSession } from '../../auth/requireSession';
 
 const prisma = new PrismaClient();
 const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireSession();
     const { id: idStr } = await params;
     const id = parseInt(idStr, 10);
     if (isNaN(id)) {
@@ -77,6 +79,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireSession();
     const { id: idStr } = await params;
     const id = parseInt(idStr, 10);
     if (isNaN(id)) {

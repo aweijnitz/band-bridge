@@ -34,6 +34,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
   const wavesurferRef = useRef<any>(null);
   const router = useRouter();
   const [showToast, setShowToast] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Fetch song, comments, and project status
   useEffect(() => {
@@ -187,6 +188,10 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
     setTimeout(() => setShowToast(false), 1800);
   };
 
+  useEffect(() => {
+    fetch('/api/auth/session').then(res => setIsLoggedIn(res.ok));
+  }, []);
+
   if (!song) return <div className="bg-zinc-400 min-h-screen w-full p-8">Loading...</div>;
 
   return (
@@ -203,7 +208,8 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
           <button
             onClick={handleDownload}
             className="p-1 rounded bg-indigo-500 hover:bg-indigo-700 text-white"
-            title="Download song"
+            title={isLoggedIn ? 'Download song' : 'Sign in to download'}
+            disabled={!isLoggedIn}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
           </button>
@@ -296,16 +302,18 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
           <div className="flex gap-2">
             <input
               type="text"
-              value={commentInput || ''}
+              value={commentInput}
               onChange={e => setCommentInput(e.target.value)}
-              className="flex-1 border rounded px-2 py-1"
-              placeholder="Add a comment..."
               onKeyDown={handleCommentInputKeyDown}
+              className="border rounded px-2 py-1 w-full"
+              placeholder={isLoggedIn ? 'Add a comment...' : 'Sign in to comment'}
+              disabled={!isLoggedIn || commentLoading}
             />
             <button
               onClick={handleAddCommentWithTime}
-              className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
-              disabled={commentLoading}
+              className="ml-2 px-3 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
+              disabled={!isLoggedIn || commentLoading}
+              title={isLoggedIn ? 'Add comment' : 'Sign in to comment'}
             >
               {commentLoading ? 'Adding...' : 'Add'}
             </button>

@@ -26,6 +26,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   const [showConfirm, setShowConfirm] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const pathname = typeof window !== 'undefined' ? window.location.origin : '';
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Fetch the precomputed waveform .dat file and decode it
   useEffect(() => {
@@ -183,6 +184,10 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     setShowConfirm(false);
   };
 
+  useEffect(() => {
+    fetch('/api/auth/session').then(res => setIsLoggedIn(res.ok));
+  }, []);
+
   return (
     <div className="bg-zinc-300 rounded shadow p-6 relative">
       {/* Top right buttons */}
@@ -190,7 +195,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         <button
           onClick={handleDownload}
           className="p-1 rounded bg-indigo-500 hover:bg-indigo-700 text-white"
-          title="Download song"
+          title={isLoggedIn ? 'Download song' : 'Sign in to download'}
+          disabled={!isLoggedIn}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
         </button>
@@ -205,11 +211,10 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           </svg>
         </button>
         <button
-          onClick={projectStatus === 'open' ? handleDelete : undefined}
-          className={`p-1 rounded ${projectStatus === 'open' ? 'bg-red-500 hover:bg-red-700 text-white' : 'bg-gray-300 text-gray-400 cursor-not-allowed'}`}
-          title={projectStatus === 'open' ? 'Delete song' : 'Delete only available for open projects'}
-          aria-label="Delete Song"
-          disabled={projectStatus !== 'open'}
+          onClick={handleDelete}
+          className="p-1 rounded bg-red-500 hover:bg-red-700 text-white"
+          title={isLoggedIn ? 'Delete song' : 'Sign in to delete'}
+          disabled={!isLoggedIn}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v2H9V4a1 1 0 011-1zm-7 4h18" />
@@ -276,11 +281,13 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
                     className="bg-zinc-200 text-indigo-800 px-1 py-0.5 rounded text-xs font-mono mr-2 hover:bg-blue-200 focus:outline-none"
                     onClick={() => handleSeekToTime(comment.time)}
                   >
+                    
                     {formatTime(comment.time)}
                   </button>
                 )}
                 {comment.text}
               </span>
+              <span className="text-xs text-gray-400 ml-2 text-right flex-1">{comment.user.username}</span>
               <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
             </li>
           ))}

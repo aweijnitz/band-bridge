@@ -5,9 +5,9 @@ type ProjectStatus = typeof PROJECT_STATUS[number];
 
 type ProjectModalComponentProps = {
   open: boolean;
-  form: { name: string; owner: string; status: ProjectStatus };
+  form: { name: string; status: ProjectStatus; bandId: number };
   bandName: string;
-  onFormChange: (form: { name: string; owner: string; status: ProjectStatus }) => void;
+  onFormChange: (form: { name: string; status: ProjectStatus; bandId: number }) => void;
   onClose: () => void;
   onCreate: () => void;
   loading?: boolean;
@@ -38,12 +38,6 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
           placeholder="Project Name"
           value={form.name}
           onChange={e => onFormChange({ ...form, name: e.target.value })}
-        />
-        <input
-          className="w-full mb-2 border rounded px-2 py-1"
-          placeholder="Owner"
-          value={form.owner}
-          onChange={e => onFormChange({ ...form, owner: e.target.value })}
         />
         <select
           className="w-full mb-4 border rounded px-2 py-1"
