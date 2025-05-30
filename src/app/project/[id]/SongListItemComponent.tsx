@@ -215,6 +215,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           className="p-1 rounded bg-red-500 hover:bg-red-700 text-white"
           title={isLoggedIn ? 'Delete song' : 'Sign in to delete'}
           disabled={!isLoggedIn}
+          aria-label="Delete Song"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v2H9V4a1 1 0 011-1zm-7 4h18" />

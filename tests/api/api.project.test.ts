@@ -9,13 +9,17 @@ jest.mock('../../src/generated/prisma', () => {
           Promise.resolve({
             id: 1,
             name: data.name,
-            bandName: data.bandName,
-            owner: data.owner,
+            bandId: data.bandId,
+            ownerId: data.ownerId,
             status: data.status,
             createdAt: new Date().toISOString(),
           })
         ),
         findMany: jest.fn().mockResolvedValue([]),
+      },
+      session: {
+        findUnique: jest.fn().mockResolvedValue({ userId: 1, user: { id: 1, username: 'testuser' }, expiresAt: new Date(Date.now() + 1000000) }),
+        deleteMany: jest.fn().mockResolvedValue({}),
       },
     })),
     ProjectStatus: { open: 'open', released: 'released', archived: 'archived' },
@@ -32,24 +36,24 @@ describe('POST /api/project (unit)', () => {
   it('should create a new project with valid data', async () => {
     const req = mockRequest({
       name: 'Test Project',
-      bandName: 'Test Band',
-      owner: 'Alice',
+      bandId: 1,
+      ownerId: 1,
       status: 'open',
     });
     const res = await POST(req);
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.name).toBe('Test Project');
-    expect(data.bandName).toBe('My Band');
-    expect(data.owner).toBe('Alice');
+    expect(data.bandId).toBe(1);
+    expect(data.ownerId).toBe(1);
     expect(data.status).toBe('open');
   });
 
   it('should return 400 for missing fields', async () => {
     const req = mockRequest({
       name: 'Test Project',
-      bandName: 'Test Band',
-      // owner missing
+      bandId: 1,
+      // ownerId missing
       status: 'open',
     });
     const res = await POST(req);

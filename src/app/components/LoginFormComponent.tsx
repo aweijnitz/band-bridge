@@ -62,8 +62,9 @@ export default function LoginFormComponent({ redirect: redirectProp, onLogin }: 
         <h1 className="text-2xl font-bold mb-6 text-center">Sign in</h1>
         {error && <div className="mb-4 text-red-600">{error}</div>}
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">Username</label>
+          <label htmlFor="login-username" className="block text-gray-700 text-sm font-bold mb-2">Username</label>
           <input
+            id="login-username"
             type="text"
             value={username}
             onChange={e => setUsername(e.target.value)}
@@ -74,8 +75,9 @@ export default function LoginFormComponent({ redirect: redirectProp, onLogin }: 
           />
         </div>
         <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
+          <label htmlFor="login-password" className="block text-gray-700 text-sm font-bold mb-2">Password</label>
           <input
+            id="login-password"
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}

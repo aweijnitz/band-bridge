@@ -5,6 +5,7 @@ import ProjectCardComponent from './ProjectCardComponent';
 import ProjectModalComponent from './ProjectModalComponent';
 import { useRouter } from 'next/navigation';
 import LoginFormComponent from "../components/LoginFormComponent";
+import ProjectListComponent from './ProjectListComponent';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
 // const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
@@ -236,56 +237,38 @@ export default function DashboardPage() {
           {/* OPEN PROJECTS */}
           <div>
             <h2 className="text-2xl mb-4">Open Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects
-                .filter(p => p.status === 'open')
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((project) => (
-                  <ProjectCardComponent
-                    key={project.id}
-                    project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-                    onArchive={handleArchive}
-                    onDelete={handleDelete}
-                  />
-                ))}
-            </div>
+            <ProjectListComponent
+              projects={projects}
+              state="open"
+              selectedBand={selectedBand}
+              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+            />
           </div>
           {/* RELEASED PROJECTS */}
           <div>
             <h2 className="text-2xl mb-4">Released Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects
-                .filter(p => p.status === 'released')
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((project) => (
-                  <ProjectCardComponent
-                    key={project.id}
-                    project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-                    onArchive={handleArchive}
-                    onDelete={handleDelete}
-                  />
-                ))}
-            </div>
+            <ProjectListComponent
+              projects={projects}
+              state="released"
+              selectedBand={selectedBand}
+              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+            />
           </div>
           {/* ARCHIVED PROJECTS */}
           <div>
             <h2 className="text-2xl mb-4">Archived Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects
-                .filter(p => p.status === 'archived')
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((project) => (
-                  <ProjectCardComponent
-                    key={project.id}
-                    project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-                    onArchive={handleArchive}
-                    onDelete={handleDelete}
-                  />
-                ))}
-            </div>
+            <ProjectListComponent
+              projects={projects}
+              state="archived"
+              selectedBand={selectedBand}
+              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
+            />
           </div>
         </div>
       )}

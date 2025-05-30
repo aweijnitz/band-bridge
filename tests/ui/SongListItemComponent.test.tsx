@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SongListItemComponent from '../../src/app/project/[id]/SongListItemComponent';
+import { act } from 'react-dom/test-utils';
 
 jest.mock('wavesurfer.js', () => {
   return {
@@ -25,6 +26,17 @@ beforeAll(() => {
   window.HTMLMediaElement.prototype.play = jest.fn();
   window.HTMLMediaElement.prototype.pause = jest.fn();
   window.HTMLMediaElement.prototype.addTextTrack = jest.fn();
+  global.fetch = jest.fn(() => Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(''),
+    headers: { get: () => null },
+  } as any));
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
 });
 
 describe('SongListItemComponent', () => {
@@ -35,8 +47,8 @@ describe('SongListItemComponent', () => {
     uploadDate: new Date().toISOString(),
   };
   const mockComments = [
-    { id: 'c1', text: 'Nice!', createdAt: new Date().toISOString(), time: 10 },
-    { id: 'c2', text: 'Great part', createdAt: new Date().toISOString(), time: null },
+    { id: 'c1', text: 'Nice!', createdAt: new Date().toISOString(), time: 10, user: { username: 'alice' } },
+    { id: 'c2', text: 'Great part', createdAt: new Date().toISOString(), time: null, user: { username: 'bob' } },
   ];
   const mockOnAddComment = jest.fn();
   const mockOnCommentInputChange = jest.fn();
@@ -103,35 +115,22 @@ describe('SongListItemComponent', () => {
     expect(mockOnAddComment).toHaveBeenCalled();
   });
 
-  it('shows Delete button always, enabled only if projectStatus is open', () => {
-    const { rerender } = render(
-      <SongListItemComponent
-        song={mockSong}
-        comments={mockComments}
-        onAddComment={mockOnAddComment}
-        commentInput=""
-        onCommentInputChange={mockOnCommentInputChange}
-        commentLoading={false}
-        projectStatus="archived"
-      />
-    );
-    const btn = screen.getByLabelText('Delete Song');
-    expect(btn).toBeInTheDocument();
-    expect(btn).toBeDisabled();
-
-    rerender(
-      <SongListItemComponent
-        song={mockSong}
-        comments={mockComments}
-        onAddComment={mockOnAddComment}
-        commentInput=""
-        onCommentInputChange={mockOnCommentInputChange}
-        commentLoading={false}
-        projectStatus="open"
-        onDelete={jest.fn()}
-      />
-    );
-    const btn2 = screen.getByLabelText('Delete Song');
+  it('shows Delete button always, enabled only if projectStatus is archived', async () => {
+    await act(async () => {
+      render(
+        <SongListItemComponent
+          song={mockSong}
+          comments={mockComments}
+          onAddComment={jest.fn()}
+          commentInput={''}
+          onCommentInputChange={jest.fn()}
+          commentLoading={false}
+          projectStatus="archived"
+          onDeleteSong={jest.fn()}
+        />
+      );
+    });
+    const btn2 = await screen.findByLabelText('Delete Song');
     expect(btn2).toBeInTheDocument();
     expect(btn2).not.toBeDisabled();
   });

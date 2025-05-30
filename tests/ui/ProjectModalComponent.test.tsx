@@ -9,13 +9,15 @@ describe('ProjectModalComponent', () => {
     bandName: '',
     owner: '',
     status: 'open',
+    bandId: 1,
   } as const;
 
   it('does not render when open is false', () => {
     render(
       <ProjectModalComponent
         open={false}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={jest.fn()}
         onCreate={jest.fn()}
@@ -28,7 +30,8 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={jest.fn()}
         onCreate={jest.fn()}
@@ -42,7 +45,8 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={jest.fn()}
         onCreate={jest.fn()}
@@ -56,18 +60,17 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={onFormChange}
         onClose={jest.fn()}
         onCreate={jest.fn()}
       />
     );
     fireEvent.change(screen.getByPlaceholderText('Project Name'), { target: { value: 'New Project' } });
-    expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, name: 'New Project' });
-    fireEvent.change(screen.getByPlaceholderText('Owner'), { target: { value: 'Bob' } });
-    expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, owner: 'Bob' });
+    expect(onFormChange).toHaveBeenCalledWith({ name: 'New Project', status: baseForm.status, bandId: baseForm.bandId });
     fireEvent.change(screen.getByDisplayValue('open'), { target: { value: 'archived' } });
-    expect(onFormChange).toHaveBeenCalledWith({ ...baseForm, status: 'archived' });
+    expect(onFormChange).toHaveBeenCalledWith({ name: baseForm.name, status: 'archived', bandId: baseForm.bandId });
   });
 
   it('calls onClose when Cancel is clicked', () => {
@@ -75,7 +78,8 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={onClose}
         onCreate={jest.fn()}
@@ -90,7 +94,8 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={jest.fn()}
         onCreate={onCreate}
@@ -104,7 +109,8 @@ describe('ProjectModalComponent', () => {
     render(
       <ProjectModalComponent
         open={true}
-        form={baseForm}
+        form={{ name: baseForm.name, status: baseForm.status, bandId: baseForm.bandId }}
+        bandName=""
         onFormChange={jest.fn()}
         onClose={jest.fn()}
         onCreate={jest.fn()}

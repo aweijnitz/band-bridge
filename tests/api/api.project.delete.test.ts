@@ -17,6 +17,10 @@ jest.mock('../../src/generated/prisma', () => {
         findUnique: (...args: any[]) => findUniqueImpl(...args),
         delete: jest.fn().mockResolvedValue({ id: 123, name: 'Test', bandName: 'Band', owner: 'Owner', status: 'archived', createdAt: new Date().toISOString() }),
       },
+      session: {
+        findUnique: jest.fn().mockResolvedValue({ userId: 1, user: { id: 1, username: 'testuser' }, expiresAt: new Date(Date.now() + 1000000) }),
+        deleteMany: jest.fn().mockResolvedValue({}),
+      },
     })),
   };
 });

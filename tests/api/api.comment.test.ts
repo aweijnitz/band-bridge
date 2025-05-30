@@ -19,6 +19,10 @@ jest.mock('../../src/generated/prisma', () => {
           })
         ),
       },
+      session: {
+        findUnique: jest.fn().mockResolvedValue({ userId: 1, user: { id: 1, username: 'testuser' }, expiresAt: new Date(Date.now() + 1000000) }),
+        deleteMany: jest.fn().mockResolvedValue({}),
+      },
     })),
   };
 });
@@ -26,7 +30,7 @@ jest.mock('../../src/generated/prisma', () => {
 describe('Comment API', () => {
   it('GET returns comments for a song', async () => {
     const req = {} as any;
-    const params = { songId: '1' };
+    const params = Promise.resolve({ songId: '1' });
     const res = await GET(req, { params });
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -36,14 +40,14 @@ describe('Comment API', () => {
 
   it('GET returns 400 for invalid songId', async () => {
     const req = {} as any;
-    const params = { songId: 'abc' };
+    const params = Promise.resolve({ songId: 'abc' });
     const res = await GET(req, { params });
     expect(res.status).toBe(400);
   });
 
   it('POST adds a comment', async () => {
     const req = { json: async () => ({ text: 'New comment' }) } as any;
-    const params = { songId: '1' };
+    const params = Promise.resolve({ songId: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(201);
     const data = await res.json();
@@ -53,14 +57,14 @@ describe('Comment API', () => {
 
   it('POST returns 400 for invalid songId', async () => {
     const req = { json: async () => ({ text: 'New comment' }) } as any;
-    const params = { songId: 'abc' };
+    const params = Promise.resolve({ songId: 'abc' });
     const res = await POST(req, { params });
     expect(res.status).toBe(400);
   });
 
   it('POST returns 400 for missing text', async () => {
     const req = { json: async () => ({}) } as any;
-    const params = { songId: '1' };
+    const params = Promise.resolve({ songId: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(400);
   });
