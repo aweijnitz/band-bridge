@@ -142,7 +142,12 @@ export default function DashboardPage() {
     const res = await fetch(`/api/project/${showEdit.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        ownerId: userId,
+        status: form.status,
+        bandId: form.bandId
+      }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -178,7 +183,7 @@ export default function DashboardPage() {
     }
   };
 
-  console.log('isLoggedIn', isLoggedIn);
+
   if (isLoggedIn === false) {
     return <LoginFormComponent redirect="/dashboard" />;
   }
@@ -206,7 +211,7 @@ export default function DashboardPage() {
                 ))}
               </select>
             ) : (
-              bands[0]?.name || 'My Band'
+              bands[0]?.name || 'BAND_NOT_SET'
             )} projects
           </h1>
         </div>
@@ -239,7 +244,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -257,7 +262,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -275,7 +280,7 @@ export default function DashboardPage() {
                   <ProjectCardComponent
                     key={project.id}
                     project={project}
-                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: 0 }); }}
+                    onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
@@ -286,8 +291,8 @@ export default function DashboardPage() {
       )}
       <ProjectModalComponent
         open={showCreate}
-        form={{ ...form, bandId: form.bandId ?? 0 }}
-        bandName={bands.length > 1 ? selectedBand?.name || 'My Band' : 'My Band'}
+        form={{ ...form, bandId: selectedBand?.id ?? 0 }}
+        bandName={selectedBand?.name || 'My Band'}
         onFormChange={setForm}
         onClose={() => setShowCreate(false)}
         onCreate={handleCreate}
@@ -297,8 +302,8 @@ export default function DashboardPage() {
       />
       <ProjectModalComponent
         open={!!showEdit}
-        form={{ ...form, bandId: form.bandId ?? 0 }}
-        bandName={bands.length > 1 ? selectedBand?.name || 'My Band' : 'My Band'}
+        form={{ ...form, bandId: selectedBand?.id ?? 0 }}
+        bandName={selectedBand?.name || 'My Band'}
         onFormChange={setForm}
         onClose={() => setShowEdit(null)}
         onCreate={handleEdit}
