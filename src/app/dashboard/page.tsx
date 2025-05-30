@@ -8,7 +8,6 @@ import LoginFormComponent from "../components/LoginFormComponent";
 import ProjectListComponent from './ProjectListComponent';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
-// const bandName = process.env.NEXT_PUBLIC_BAND_NAME || "My Band";
 
 type Band = {
   id: number;

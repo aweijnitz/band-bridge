@@ -38,9 +38,25 @@ A web app for band collaboration: create projects, upload songs, and comment on 
    cp src/backend/admin/.env.example .env
    # Edit .env as needed (e.g., set NEXT_PUBLIC_BAND_NAME, ADMIN_API_KEY, DB_URL, ...)
    ```
+### Changing/setting database password
 
-3. **Start all services (including the audio and admin microservices):**
+**Change the actual password**
+
+  docker exec -it <container_name_or_id> psql -U postgres
+  ALTER USER postgres WITH PASSWORD 'your_new_secure_password';
+  # CTRL-D to exit
+
+
+**Set the password in the shell that starts docker compose**
+
+  export POSTGRES_PASSWORD=your_new_secure_database_password
+
+
+
+3. **Start all services for development (including the audio and admin microservices):**
    ```sh
+   export POSTGRES_PASSWORD=your_new_secure_database_password
+   export ADMIN_API_KEY=your_new_secure_API_key
    ./buildDockerImages.sh
    docker compose up # or docker compose up -d  to run in the background
    npm run dev

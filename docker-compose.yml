@@ -4,7 +4,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: bandbridge
     ports:
       - '5432:5432'
@@ -26,7 +26,7 @@ services:
   admin:
     build:
       context: ./src/backend/admin
-    restart: always
+    restart: unless-stopped
     env_file:
       - ./src/backend/admin/.env
     ports:

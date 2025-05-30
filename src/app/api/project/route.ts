@@ -5,6 +5,7 @@ import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();
 
+
 /** Get projects for a band 
  * 
 */
