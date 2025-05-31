@@ -2,9 +2,18 @@
 
 A web app for band collaboration: create projects, upload songs, and comment on songs with time-based markers. Built with Next.js, React, TypeScript, Tailwind CSS, and Postgres (via Prisma). Audio files and waveform data are managed by a dedicated microservice. User, band, and API key management is handled by a secure admin microservice.
 
-![](doc/project-dashboard.png| width=320)
-![](doc/project-view.png| width=320)
-![](doc/song-view.png| width=320)
+<picture>
+   <img src="doc/project-dashboard.png" alt="Screenshot project dashboard" width="320" />
+</picture>
+
+<picture>
+   <img src="doc/project-view.png" alt="Screenshot project view" width="320" />
+</picture>
+
+<picture>
+   <img src="doc/song-view.png" alt="Screenshot song view" width="320" />
+</picture>
+
 ---
 
 ## Features
