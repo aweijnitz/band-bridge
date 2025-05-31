@@ -28,7 +28,7 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 
 1. **Clone the repository:**
    ```sh
-   git clone <repo-url>
+   git clone https://github.com/aweijnitz/band-bridge.git
    cd band-bridge
    ```
 
@@ -83,16 +83,17 @@ band-bridge/
 │       ├── audio/          # Audio microservice (Express, waveform pre-compute)
 │       └── admin/          # Admin microservice (Express, Prisma)
 ├── public/
-│   └── filestore/          # Uploaded audio files and waveform .dat files
+│   └── (static assets only)
 ├── prisma/                 # Prisma schema and migrations
 ├── tests/                  # API and UI tests
 ├── docker-compose.yml      # Multi-service orchestration
 └── README.md
 ```
 
-- **Audio Microservice:**
+**Audio Microservice:**
   - Located at `src/backend/audio/`
   - Handles audio file uploads, deletions, and waveform pre-computation using [BBC audiowaveform](https://github.com/bbc/audiowaveform).
+  - All audio and waveform files are stored in a Docker volume mounted at `/assetfilestore` inside the audio microservice container. This volume is not directly accessible from the host or the Next.js app.
   - Waveform data is saved as `.dat` files next to the audio files (e.g., `song.wav` → `song.wav.dat`).
 
 - **Admin Microservice:**
@@ -211,13 +212,13 @@ curl -X POST http://localhost:4002/admin/apikeys/1/revoke \
   ```sh
   curl -X POST http://localhost:3000/api/project \
     -H "Content-Type: application/json" \
-    -d '{"name":"New Project","owner":1,"status":"open"}'
+    -d '{"name":"New Project","ownerId":1,"status":"open","bandId":1}'
   ```
 - **Update Project**
   ```sh
   curl -X PUT http://localhost:3000/api/project/1 \
     -H "Content-Type: application/json" \
-    -d '{"name":"Renamed Project","owner":1,"status":"released"}'
+    -d '{"name":"Renamed Project","ownerId":1,"status":"released","bandId":1}'
   ```
 - **Delete Project**
   ```sh
@@ -249,7 +250,7 @@ curl -X POST http://localhost:4002/admin/apikeys/1/revoke \
   ```sh
   curl http://localhost:3000/api/project/1/song/2/comment
   ```
-- **Add Comment**
+- **Add Comment (requires authentication)**
   ```sh
   curl -X POST http://localhost:3000/api/project/1/song/2/comment \
     -H "Content-Type: application/json" \
@@ -277,17 +278,17 @@ All audio and waveform file requests from the frontend are proxied through the N
 
 ## Environment Variables
 - `NEXT_PUBLIC_BAND_NAME`: The band name shown in the UI.
-- `AUDIO_SERVICE_PORT`: Port for the audio microservice (default: 4001).
-- `AUDIO_FILESTORE_PATH`: Filesystem path for audio storage (used by the microservice, set in docker-compose).
+- `AUDIO_SERVICE_PORT`: Port for the audio microservice (default: 4001, internal only).
 - `AUDIO_SERVICE_URL`: URL for the audio microservice (used by the Next.js API to proxy requests).
 - `ADMIN_API_KEY`: Static API key for admin microservice.
-- `ADMIN_SERVICE_PORT`: Port for admin microservice (default: 4002).
+- `DATABASE_URL`: Postgres connection string for all services.
+- `NEXTAUTH_SECRET`, `NEXTAUTH_URL`: For NextAuth.js (if used).
 
 ---
 
 ## Notes
 - **Waveform Pre-Compute:** On upload, the audio microservice runs `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
-- **File Storage:** All audio and waveform files are stored in `public/filestore/` (shared between the app and the microservice via Docker volume).
+- **File Storage:** All audio and waveform files are stored in a Docker volume at `/assetfilestore` inside the audio microservice. They are not accessible from the Next.js app or the host filesystem.
 - **Tests:** Run `npm test` to execute all API and UI tests.
 
 ---
