@@ -53,16 +53,15 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 
 
 
-3. **Start all services for development (including the audio and admin microservices):**
+3. **Start all services (including the audio and admin microservices):**
    ```sh
    export POSTGRES_PASSWORD=your_new_secure_database_password
    export ADMIN_API_KEY=your_new_secure_API_key
    ./buildDockerImages.sh
    docker compose up # or docker compose up -d  to run in the background
-   npm run dev
    ```
    - This will start:
-     - The Next.js app running locally, with hot reload
+     - The Next.js webapp
      - The Postgres database
      - The audio microservice (Express, with audiowaveform and ffmpeg)
      - The admin microservice (Express, Prisma)

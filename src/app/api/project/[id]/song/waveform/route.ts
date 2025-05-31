@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+  const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://AUDIO_SERVICE_URL';
   const fileName = req.nextUrl.searchParams.get('file');
   if (!fileName) {
     return NextResponse.json({ error: 'Missing file parameter' }, { status: 400 });

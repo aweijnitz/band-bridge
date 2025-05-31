@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: bandbridge
-    ports:
-      - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
   audio:
@@ -18,11 +16,8 @@ services:
       - db
     environment:
       - AUDIO_SERVICE_PORT=4001
-      - AUDIO_FILESTORE_PATH=${AUDIO_FILESTORE_PATH}
-    ports:
-      - '4001:4001'
     volumes:
-      - audio_filestore:${AUDIO_FILESTORE_PATH}
+      - asset_filestore:/assetfilestore
   admin:
     build:
       context: ./src/backend/admin
@@ -35,6 +30,22 @@ services:
       - db
     volumes:
       - ./src/backend/admin/.env:/app/.env:ro
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - AUDIO_SERVICE_URL=${AUDIO_SERVICE_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+      - audio
+    volumes:
+      - ./.env:/app/.env:ro
 volumes:
   db_data:
-  audio_filestore: 
+  asset_filestore: 

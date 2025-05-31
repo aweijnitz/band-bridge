@@ -6,18 +6,14 @@ import { execFile } from 'child_process';
 
 const app = express();
 const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
-const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
-  ? path.isAbsolute(process.env.AUDIO_FILESTORE_PATH)
-    ? process.env.AUDIO_FILESTORE_PATH
-    : path.join(process.cwd(), process.env.AUDIO_FILESTORE_PATH)
-  : path.join(process.cwd(), 'public', 'filestore');
+const FILESTORE_PATH = '/assetfilestore'; // Mapped to volume in docker-compose.yml
 
 app.use(fileUpload());
 app.use(express.json());
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  console.log('Health check');
+  console.log('Audio Service Health check');
   res.json({ status: 'ok' });
 });
 

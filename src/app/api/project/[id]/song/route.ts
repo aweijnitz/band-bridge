@@ -104,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           filePath: fileName,
         },
       });
-      console.log('[Song Upload] Song created in DB:', song);
+      //console.log('[Song Upload] Song created in DB:', song);
       return NextResponse.json(song, { status: 201 });
     } catch (dbError: unknown) {
       console.error('[Song Upload] DB error creating song', {
