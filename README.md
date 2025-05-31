@@ -25,7 +25,7 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 - Deep links to song details (with share button)
 - Responsive, modern UI (Next.js, Tailwind CSS)
 - Robust API and UI test suite
-- **Admin microservice for user, band, and API key management**
+- Admin microservice for user, band, and API key management There is no admin UI. Use curl (see examples below)
 
 ---
 
@@ -48,20 +48,21 @@ A web app for band collaboration: create projects, upload songs, and comment on 
    ```sh
    cp .env.example .env
    cp src/backend/admin/.env.example .env
-   # Edit .env as needed (e.g., set NEXT_PUBLIC_BAND_NAME, ADMIN_API_KEY, DB_URL, ...)
+   # Edit .env as needed (e.g., set ADMIN_API_KEY, DB_URL, ...)
    ```
 ### Changing/setting database password
 
 **Change the actual password**
 
+```sh
   docker exec -it <container_name_or_id> psql -U postgres
   ALTER USER postgres WITH PASSWORD 'your_new_secure_password';
-  # CTRL-D to exit
-
+  CTRL-D exits
+```
 
 **Set the password in the shell that starts docker compose**
 
-  export POSTGRES_PASSWORD=your_new_secure_database_password
+  ```export POSTGRES_PASSWORD=your_new_secure_database_password```
 
 
 
