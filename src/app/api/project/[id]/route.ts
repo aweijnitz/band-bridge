@@ -1,30 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
-import { unlink } from 'fs/promises';
-import path from 'path';
 import { requireSession } from '../../auth/requireSession';
 
 const prisma = new PrismaClient();
-const FILESTORE_PATH = process.env.AUDIO_FILESTORE_PATH
-  ? path.isAbsolute(process.env.AUDIO_FILESTORE_PATH)
-    ? process.env.AUDIO_FILESTORE_PATH
-    : path.join(process.cwd(), process.env.AUDIO_FILESTORE_PATH)
-  : path.join(process.cwd(), 'public', 'filestore');
 
 /**
  * Get a project by id
  * @param req - The request object
- * @param params - The parameters object
+ * @param context - The context object
  * @returns A response object
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: idStr } = await params;
-    const id = parseInt(idStr, 10);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const idNr = parseInt(id, 10);
+    if (isNaN(idNr)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
-    const project = await prisma.project.findUnique({ where: { id } });
+    const project = await prisma.project.findUnique({ where: { id: idNr } });
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
@@ -37,15 +30,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 /**
  * Update a project
  * @param req - The request object
- * @param params - The parameters object
+ * @param context - The context object
  * @returns A response object
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireSession();
-    const { id: idStr } = await params;
-    const id = parseInt(idStr, 10);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const idNr = parseInt(id, 10);
+    if (isNaN(idNr)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
     const data = await req.json();
@@ -55,7 +48,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     
     const updated = await prisma.project.update({
-      where: { id },
+      where: { id: idNr },
       data: { name, bandId, ownerId, status },
     });
     return NextResponse.json(updated);
@@ -74,24 +67,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 /**
  * Delete a project and all its songs
  * @param req - The request object
- * @param params - The parameters object
+ * @param context - The context object
  * @returns A response object
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireSession();
-    const { id: idStr } = await params;
-    const id = parseInt(idStr, 10);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const idNr = parseInt(id, 10);
+    if (isNaN(idNr)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
     // Check if project exists
-    const project = await prisma.project.findUnique({ where: { id } });
+    const project = await prisma.project.findUnique({ where: { id: idNr } });
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
     // Find all songs for the project
-    const songs = await prisma.song.findMany({ where: { projectId: id } });
+    const songs = await prisma.song.findMany({ where: { projectId: idNr } });
     const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
     // Delete all song files via audio microservice
     for (const song of songs) {
@@ -112,9 +105,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const songIds = songs.map(song => song.id);
     await prisma.comment.deleteMany({ where: { songId: { in: songIds } } });
     // Delete all songs for the project
-    await prisma.song.deleteMany({ where: { projectId: id } });
+    await prisma.song.deleteMany({ where: { projectId: idNr } });
     // Delete the project
-    const deleted = await prisma.project.delete({ where: { id } });
+    const deleted = await prisma.project.delete({ where: { id: idNr } });
     return NextResponse.json({ success: true, deleted });
   } catch (error) {
     if (

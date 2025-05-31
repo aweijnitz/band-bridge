@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 
 export default function UserMenu() {
   const [user, setUser] = useState<{ userId: number; userName: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const fetchUser = useCallback(() => {
     setLoading(true);

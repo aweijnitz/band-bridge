@@ -25,11 +25,11 @@ router.post(
         data: { username, passwordHash }
       });
       res.status(201).json({ id: user.id, username: user.username });
-    } catch (err: any) {
-      if (err.code === 'P2002') {
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'P2002') {
         return res.status(409).json({ error: 'Username already exists' });
       }
-      res.status(500).json({ error: 'Failed to create user', details: err.message, code: err.code });
+      res.status(500).json({ error: 'Failed to create user', details: (err as { message?: string }).message, code: (err as { code?: string }).code });
     }
   }
 );
@@ -71,8 +71,8 @@ router.post(
         data: { bandId: Number(bandId), userId: Number(userId) }
       });
       res.status(201).json(userBand);
-    } catch (err: any) {
-      if (err.code === 'P2002') {
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'P2002') {
         return res.status(409).json({ error: 'User already in band' });
       }
       res.status(500).json({ error: 'Failed to assign user to band' });

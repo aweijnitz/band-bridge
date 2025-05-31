@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginFormComponent({ redirect: redirectProp, onLogin }: { redirect?: string, onLogin?: () => void }) {
   const [username, setUsername] = useState("");
@@ -8,7 +8,6 @@ export default function LoginFormComponent({ redirect: redirectProp, onLogin }: 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkedSession, setCheckedSession] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = redirectProp || searchParams.get("redirect") || "/dashboard";
 
@@ -25,7 +24,6 @@ export default function LoginFormComponent({ redirect: redirectProp, onLogin }: 
         setCheckedSession(true);
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

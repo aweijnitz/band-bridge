@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
 import Regions from 'wavesurfer.js/dist/plugins/regions.esm.js';
@@ -18,10 +17,40 @@ function decodeDatFile(buffer: ArrayBuffer): number[] {
   return Array.from(floatArray);
 }
 
-export default function SongPage({ params }: { params: Promise<{ id: string; songId: string }> }) {
-  const { id: projectId, songId } = use(params);
-  const [song, setSong] = useState<any>(null);
-  const [comments, setComments] = useState<any[]>([]);
+interface Comment {
+  id: number;
+  text: string;
+  time?: number;
+  user?: { username: string };
+  createdAt?: string;
+}
+
+interface Song {
+  id: number;
+  projectId: number;
+  filePath: string;
+  title: string;
+  uploadDate: string;
+}
+
+interface RegionPlugin {
+  clear: () => void;
+  addRegion: (region: {
+    start: number;
+    end: number;
+    color: string;
+    drag: boolean;
+    resize: boolean;
+  }) => void;
+}
+
+export default function SongPage() {
+  const params = useParams();
+  const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const songId = Array.isArray(params.songId) ? params.songId[0] : params.songId;
+
+  const [song, setSong] = useState<Song | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentInput, setCommentInput] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [peaks, setPeaks] = useState<number[] | null>(null);
@@ -31,7 +60,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
   const [projectStatus, setProjectStatus] = useState<'open' | 'released' | 'archived'>('open');
   const [projectName, setProjectName] = useState<string | undefined>(undefined);
   const waveformRef = useRef<HTMLDivElement>(null);
-  const wavesurferRef = useRef<any>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
   const router = useRouter();
   const [showToast, setShowToast] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -61,6 +90,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
     let isMounted = true;
     async function fetchPeaks() {
       try {
+        if (!song) return;
         const res = await fetch(`/api/project/${projectId}/song/waveform?file=${encodeURIComponent(song.filePath)}`);
         if (!res.ok) return;
         const buffer = await res.arrayBuffer();
@@ -76,9 +106,13 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
   useEffect(() => {
     if (!waveformRef.current || !peaks || !song) return;
     const audioUrl = `/api/project/${projectId}/song/audio?file=${encodeURIComponent(song.filePath)}`;
-    const peaksShape = Array.isArray(peaks[0]) ? '2D' : '1D';
-    let peaksOption: any = peaks;
-    if (peaksShape === '1D') peaksOption = [peaks];
+    let peaksOption: number[][];
+    if (Array.isArray(peaks[0])) {
+      // @ts-expect-error: peaks may be number[] or number[][], we handle both cases
+      peaksOption = peaks as number[][];
+    } else {
+      peaksOption = [peaks as unknown as number[]];
+    }
     const usedDuration = duration || 30;
     const ws = WaveSurfer.create({
       container: waveformRef.current,
@@ -107,20 +141,20 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
       el.addEventListener('wheel', noop, { passive: true });
     }
     return () => { ws.destroy(); wavesurferRef.current = null; };
-  }, [song, peaks, projectId]);
+  }, [song, peaks, projectId, duration]);
 
   // Add comment markers as regions
   useEffect(() => {
     const ws = wavesurferRef.current;
     const plugins = ws?.getActivePlugins?.();
     const regions = plugins && Array.isArray(plugins)
-      ? (plugins.find((p: any) => p && p.constructor && p.constructor.name === 'RegionsPlugin') as any)
+      ? plugins.find((p) => p && p.constructor && p.constructor.name === 'RegionsPlugin')
       : undefined;
     if (!ws || !regions) return;
-    regions.clear();
-    (comments || []).forEach((comment: any) => {
+    (regions as unknown as RegionPlugin).clear();
+    (comments || []).forEach((comment) => {
       if (comment.time !== undefined && comment.time !== null) {
-        regions.addRegion({
+        (regions as unknown as RegionPlugin).addRegion({
           start: comment.time,
           end: comment.time + 0.1,
           color: 'rgba(59,130,246,0.5)',
@@ -154,8 +188,10 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
     router.push(`/project/${projectId}`);
   };
   const cancelDelete = () => setShowConfirm(false);
-  const handleSeekToTime = (time: number) => {
-    if (wavesurferRef.current) wavesurferRef.current.setTime(time);
+  const handleSeekToTime = (time?: number) => {
+    if (typeof time === 'number' && wavesurferRef.current) {
+      wavesurferRef.current.setTime(time);
+    }
   };
   const handleAddCommentWithTime = async () => {
     if (commentLoading || !song) return;
@@ -241,7 +277,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
           </div>
         )}
         <h1 className="text-2xl mb-2">{song.title}</h1>
-        <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(song.uploadDate).toLocaleString()}</div>
+        <div className="text-gray-500 text-sm mb-2">Uploaded: {song.uploadDate ? new Date(song.uploadDate).toLocaleString() : ''}</div>
         <div className="mb-4">
           <div ref={waveformRef} className="w-full min-w-0" />
         </div>
@@ -281,7 +317,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
         <div>
           <h3 className="mb-2 text-sm">Comments</h3>
           <ul className="mb-2">
-            {(comments || []).map((comment: any) => (
+            {(comments || []).map((comment) => (
               <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
                 <span className='text-sm'>
                   {comment.time !== undefined && comment.time !== null && (
@@ -295,7 +331,7 @@ export default function SongPage({ params }: { params: Promise<{ id: string; son
                   )}
                   {comment.text}
                 </span>
-                <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                <span className="text-xs text-gray-400 ml-2">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
               </li>
             ))}
           </ul>

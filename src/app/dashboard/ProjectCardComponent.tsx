@@ -1,7 +1,6 @@
 import Link from 'next/link';
 
-const PROJECT_STATUS = ["open", "released", "archived"] as const;
-type ProjectStatus = typeof PROJECT_STATUS[number];
+type ProjectStatus = "open" | "released" | "archived";
 
 type Project = {
   id: number;
@@ -15,11 +14,10 @@ type Project = {
 type ProjectCardComponentProps = {
   project: Project;
   onEdit: (project: Project) => void;
-  onArchive: (id: number) => void;
   onDelete: (id: number) => void;
 };
 
-export default function ProjectCardComponent({ project, onEdit, onArchive, onDelete }: ProjectCardComponentProps) {
+export default function ProjectCardComponent({ project, onEdit, onDelete }: ProjectCardComponentProps) {
   return (
     <div className="bg-zinc-300 rounded shadow p-6 hover:shadow-lg transition">
       <Link href={`/project/${project.id}`} className="block mb-2">

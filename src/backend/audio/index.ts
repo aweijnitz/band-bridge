@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import fileUpload, { UploadedFile, FileArray } from 'express-fileupload';
+import fileUpload, { UploadedFile } from 'express-fileupload';
 import path from 'path';
 import fs from 'fs/promises';
 import { execFile } from 'child_process';
@@ -21,31 +21,32 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-function handleUpload(req: any, res: any) {
+async function handleUpload(req: Request, res: Response): Promise<void> {
   if (!req.files || !(req.files as Record<string, UploadedFile>).file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+    res.status(400).json({ error: 'No file uploaded' });
+    return;
   }
   const file = (req.files as Record<string, UploadedFile>).file;
   const fileName = `${Date.now()}_${file.name}`;
   const filePath = path.join(FILESTORE_PATH, fileName);
-  fs.mkdir(FILESTORE_PATH, { recursive: true })
-    .then(() => fs.writeFile(filePath, file.data))
+  try {
+    await fs.mkdir(FILESTORE_PATH, { recursive: true });
+    await fs.writeFile(filePath, file.data);
     // Precompute waveform
-    .then(() => {
-      const datPath = `${filePath}.dat`;
-      return new Promise((resolve, reject) => {
-        execFile('audiowaveform', ['-i', filePath, '-o', datPath, '--pixels-per-second', '1024'], (err) => {
-          if (err) reject(err);
-          else resolve(undefined);
-        });
+    const datPath = `${filePath}.dat`;
+    await new Promise<void>((resolve, reject) => {
+      execFile('audiowaveform', ['-i', filePath, '-o', datPath, '--pixels-per-second', '1024'], (err) => {
+        if (err) reject(err);
+        else resolve();
       });
-    })
-    .then(() => res.status(201).json({ fileName }))
-    .catch((err) => res.status(500).json({ error: 'Failed to upload or process file', details: err instanceof Error ? err.message : err }));
+    });
+    res.status(201).json({ fileName });
+  } catch (err: unknown) {
+    res.status(500).json({ error: 'Failed to upload or process file', details: err instanceof Error ? err.message : err });
+  }
 }
 
 app.post('/upload', handleUpload);
-
 
 // Delete a single song file and its .dat file
 app.delete('/delete-song', async (req: Request, res: Response) => {
@@ -62,8 +63,8 @@ app.delete('/delete-song', async (req: Request, res: Response) => {
       await fs.unlink(filePath + '.dat');
     } catch {}
     res.json({ success: true, deleted: fileName });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to delete file', details: err?.message || String(err) });
+  } catch (err: unknown) {
+    res.status(500).json({ error: 'Failed to delete file', details: err instanceof Error ? err.message : String(err) });
   }
 });
 

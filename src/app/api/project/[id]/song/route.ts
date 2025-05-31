@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
-import { NextRequest as NodeNextRequest } from 'next/server';
 import { requireSession } from '../../../auth/requireSession';
 
 const prisma = new PrismaClient();
@@ -14,6 +13,7 @@ const prisma = new PrismaClient();
  * @returns A response object
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const url = new URL(req.url);
   const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
   // If requesting a file or waveform, proxy to audio service
@@ -25,8 +25,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     const headers = Object.fromEntries(fileRes.headers.entries());
     // Stream the response body directly
-    // @ts-ignore: Next.js Response supports ReadableStream in edge runtime
-    return new NextResponse(fileRes.body as any, { status: 200, headers });
+    // @ts-expect-error: Next.js Response supports ReadableStream in edge runtime
+    return new NextResponse(fileRes.body as ReadableStream<Uint8Array>, { status: 200, headers });
   }
   if (url.pathname.endsWith('/waveform') && req.nextUrl.searchParams.has('file')) {
     const fileName = req.nextUrl.searchParams.get('file');
@@ -36,12 +36,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     const headers = Object.fromEntries(fileRes.headers.entries());
     // Stream the response body directly
-    // @ts-ignore: Next.js Response supports ReadableStream in edge runtime
-    return new NextResponse(fileRes.body as any, { status: 200, headers });
+    // @ts-expect-error: Next.js Response supports ReadableStream in edge runtime
+    return new NextResponse(fileRes.body as ReadableStream<Uint8Array>, { status: 200, headers });
   }
   try {
-    const { id: idStr } = await params;
-    const projectId = parseInt(idStr, 10);
+    const projectId = parseInt(id, 10);
     if (isNaN(projectId)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
@@ -65,12 +64,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await requireSession();
   try {
     const { id: idStr } = await params;
-    console.log('[Song Upload] Received params:', { idStr });
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     let title = formData.get('title') as string | null;
     const projectId = parseInt(idStr, 10);
-    console.log('[Song Upload] Parsed projectId:', projectId, 'File:', file ? file.name : null, 'Title:', title);
     if (!file || isNaN(projectId)) {
       console.warn('[Song Upload] Missing file or invalid project id', { file, projectId });
       return NextResponse.json({ error: 'Missing file or invalid project id', details: { file: !!file, projectId } }, { status: 400 });
@@ -86,9 +83,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
     const uploadRes = await fetch(`${audioServiceUrl}/upload`, {
       method: 'POST',
-      body: uploadForm as any,
-      // @ts-ignore
-      headers: (uploadForm as any).getHeaders ? (uploadForm as any).getHeaders() : {},
+      body: uploadForm as unknown as FormData,
+      headers: (uploadForm as unknown as { getHeaders?: () => Record<string, string> }).getHeaders ? (uploadForm as unknown as { getHeaders: () => Record<string, string> }).getHeaders() : {},
     });
     if (!uploadRes.ok) {
       const err = await uploadRes.json().catch(() => ({}));
@@ -110,20 +106,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
       console.log('[Song Upload] Song created in DB:', song);
       return NextResponse.json(song, { status: 201 });
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       console.error('[Song Upload] DB error creating song', {
         projectId,
         title,
         fileName,
-        dbError: dbError?.message || dbError,
+        dbError: dbError instanceof Error ? dbError.message : dbError,
       });
       let hint = undefined;
-      if (dbError?.code === 'P2003' || (dbError?.message && dbError.message.includes('Foreign key'))) {
+      if (typeof dbError === 'object' && dbError !== null && 'code' in dbError && (dbError as { code?: string }).code === 'P2003') {
         hint = 'Check that the project with id ' + projectId + ' exists in the database.';
       }
       return NextResponse.json({
         error: 'Failed to create song in database',
-        details: dbError?.message || dbError,
+        details: dbError instanceof Error ? dbError.message : dbError,
         projectId,
         fileName,
         hint,

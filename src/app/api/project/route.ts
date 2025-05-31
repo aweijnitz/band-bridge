@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, ProjectStatus } from '@/generated/prisma';
-import path from 'path';
+import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();

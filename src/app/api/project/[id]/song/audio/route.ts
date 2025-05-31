@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireSession } from '../../../../auth/requireSession';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest) {
   const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
   const fileName = req.nextUrl.searchParams.get('file');
   if (!fileName) {
@@ -12,6 +11,5 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return new NextResponse('File not found', { status: 404 });
   }
   const headers = Object.fromEntries(fileRes.headers.entries());
-  // @ts-ignore
-  return new NextResponse(fileRes.body as any, { status: 200, headers });
+  return new NextResponse(fileRes.body as unknown as ReadableStream, { status: 200, headers });
 } 

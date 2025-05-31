@@ -1,31 +1,93 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigationComponent';
 import SongListItemComponent from './SongListItemComponent';
-import { useRouter } from 'next/navigation';
 import LoginFormComponent from "../../components/LoginFormComponent";
+import { useParams } from 'next/navigation';
 
-type ParamsType = Promise<{ id: string }> | { id: string };
-function isPromise(obj: any): obj is Promise<any> {
-  return !!obj && typeof obj.then === 'function';
+interface Song {
+  id: number;
+  projectId: number;
+  filePath: string;
+  title: string;
+  uploadDate: string;
 }
 
-export default function ProjectPage({ params }: { params: ParamsType }) {
-  const { id } = isPromise(params) ? use(params) : params;
-  const [songs, setSongs] = useState<any[]>([]);
+interface Comment {
+  id: number;
+  text: string;
+  time?: number;
+  user?: { username: string };
+  createdAt?: string;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  status: 'open' | 'released' | 'archived';
+}
+
+// Helper type guards
+function isSong(obj: unknown): obj is Song {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    typeof o.id === 'number' &&
+    typeof o.projectId === 'number' &&
+    typeof o.filePath === 'string' &&
+    typeof o.title === 'string' &&
+    typeof o.uploadDate === 'string'
+  );
+}
+function isComment(obj: unknown): obj is Comment {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    typeof o.id === 'number' &&
+    typeof o.text === 'string'
+  );
+}
+function normalizeComment(raw: unknown): Comment {
+  if (!isComment(raw)) throw new Error('Invalid comment');
+  const o = raw as unknown as Record<string, unknown>;
+  const userRaw = o.user;
+  let user: { username: string } | undefined = undefined;
+  if (typeof userRaw === 'object' && userRaw !== null && 'username' in (userRaw as Record<string, unknown>) && typeof (userRaw as Record<string, unknown>).username === 'string') {
+    user = { username: (userRaw as Record<string, unknown>).username as string };
+  } else if (typeof userRaw === 'string') {
+    user = { username: userRaw };
+  }
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  return {
+    id: o.id as number,
+    text: o.text as string,
+    time: o.time as number | undefined,
+    user,
+    createdAt: o.createdAt as string | undefined,
+  };
+}
+function normalizeSong(raw: unknown): Song {
+  if (!isSong(raw)) throw new Error('Invalid song');
+  return raw as Song;
+}
+
+export default function ProjectPage() {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [comments, setComments] = useState<{ [songId: number]: any[] }>({});
+  const [comments, setComments] = useState<{ [songId: number]: Comment[] }>({});
   const [commentInputs, setCommentInputs] = useState<{ [songId: number]: string }>({});
   const [commentLoading, setCommentLoading] = useState<{ [songId: number]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const router = useRouter();
-  
+
   useEffect(() => {
     fetch('/api/auth/session').then(res => {
       if (!res.ok) {
@@ -60,17 +122,20 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
         }
         return res.json();
       })
-      .then(data => {
+      .then((data: unknown[]) => {
         if (!data) return;
-        setSongs(data);
+        setSongs(data.filter(isSong).map(normalizeSong));
         // Fetch comments for each song
-        data.forEach((song: any) => {
+        data.filter(isSong).forEach((song) => {
           fetch(`/api/project/${id}/song/${song.id}/comment`)
             .then(res => {
               if (!res.ok) return [];
               return res.json();
             })
-            .then(commentsData => setComments(prev => ({ ...prev, [song.id]: commentsData })));
+            .then((commentsData: unknown[]) => setComments(prev => ({
+              ...prev,
+              [song.id]: commentsData.filter(isComment).map(normalizeComment),
+            })));
         });
       })
       .catch(() => setError('Failed to load songs'))
@@ -96,12 +161,17 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
       body: formData,
     });
     if (res.ok) {
-      const newSong = await res.json();
-      setSongs((prev) => [newSong, ...prev]);
-      // Fetch comments for the new song
-      fetch(`/api/project/${id}/song/${newSong.id}/comment`)
-        .then(res => res.json())
-        .then(commentsData => setComments(prev => ({ ...prev, [newSong.id]: commentsData })));
+      const newSongRaw = await res.json();
+      if (isSong(newSongRaw)) {
+        setSongs((prev) => [normalizeSong(newSongRaw), ...prev]);
+        // Fetch comments for the new song
+        fetch(`/api/project/${id}/song/${newSongRaw.id}/comment`)
+          .then(res => res.json())
+          .then((commentsData: unknown[]) => setComments(prev => ({
+            ...prev,
+            [newSongRaw.id]: commentsData.filter(isComment).map(normalizeComment),
+          })));
+      }
       if (fileInputRef.current) fileInputRef.current.value = '';
     } else {
       const err = await res.json();
@@ -114,7 +184,7 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
     setCommentInputs((prev) => ({ ...prev, [songId]: value }));
   };
 
-  const handleAddComment = async (songId: number, text?: string, time?: number) => {
+  const handleAddComment = async (songId: number, text: string, time: number | null) => {
     const commentValue = text !== undefined ? text : commentInputs[songId];
     if (!commentValue) return;
     setCommentLoading((prev) => ({ ...prev, [songId]: true }));
@@ -124,9 +194,14 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
       body: JSON.stringify({ text: commentValue, time }),
     });
     if (res.ok) {
-      const newComment = await res.json();
-      setComments((prev) => ({ ...prev, [songId]: [...(prev[songId] || []), newComment] }));
-      setCommentInputs((prev) => ({ ...prev, [songId]: '' }));
+      const newCommentRaw = await res.json();
+      if (isComment(newCommentRaw)) {
+        setComments((prev) => ({
+          ...prev,
+          [songId]: [...(prev[songId] || []), normalizeComment(newCommentRaw)],
+        }));
+        setCommentInputs((prev) => ({ ...prev, [songId]: '' }));
+      }
     }
     setCommentLoading((prev) => ({ ...prev, [songId]: false }));
   };
@@ -184,10 +259,9 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
               comments={comments[song.id]}
               onAddComment={handleAddComment}
               commentInput={commentInputs[song.id]}
-              onCommentInputChange={handleCommentChange}
+              onCommentInputChange={(e) => handleCommentChange(song.id, e.target.value)}
               commentLoading={commentLoading[song.id]}
-              projectStatus={project?.status}
-              onDeleteSong={project?.status === 'open' ? handleDeleteSong : undefined}
+              onDeleteSong={handleDeleteSong}
             />
           ))}
         </div>
@@ -196,7 +270,3 @@ export default function ProjectPage({ params }: { params: ParamsType }) {
   );
 }
 
-// Test-only export for easier testing
-export function ProjectPageTest({ params }: { params: { id: string } }) {
-  return <ProjectPage params={Promise.resolve(params)} />;
-} 

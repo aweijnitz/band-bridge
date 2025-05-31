@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await requireSession();
   try {
     const user = await prisma.user.findUnique({

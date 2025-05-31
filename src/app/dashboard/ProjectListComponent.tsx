@@ -16,13 +16,11 @@ type Project = {
 type ProjectListComponentProps = {
   projects: Project[];
   state: ProjectStatus;
-  selectedBand: { id: number; name: string } | null;
   onEdit: (p: Project) => void;
-  onArchive: (id: number) => void;
   onDelete: (id: number) => void;
 };
 
-export default function ProjectListComponent({ projects, state, selectedBand, onEdit, onArchive, onDelete }: ProjectListComponentProps) {
+export default function ProjectListComponent({ projects, state, onEdit, onDelete }: ProjectListComponentProps) {
   const filtered = projects
     .filter(p => p.status === state)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -38,7 +36,6 @@ export default function ProjectListComponent({ projects, state, selectedBand, on
             key={project.id}
             project={project}
             onEdit={onEdit}
-            onArchive={onArchive}
             onDelete={onDelete}
           />
         ))}

@@ -3,7 +3,6 @@ import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
 import Regions from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -17,15 +16,51 @@ function decodeDatFile(buffer: ArrayBuffer): number[] {
   return Array.from(floatArray);
 }
 
-export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, projectStatus, onDeleteSong }: any) {
+interface Comment {
+  id: number;
+  text: string;
+  time?: number;
+  user?: { username: string };
+  createdAt?: string;
+}
+
+interface Song {
+  id: number;
+  projectId: number;
+  filePath: string;
+  title: string;
+  uploadDate: string;
+}
+
+interface RegionPlugin {
+  clear: () => void;
+  addRegion: (region: {
+    start: number;
+    end: number;
+    color: string;
+    drag: boolean;
+    resize: boolean;
+  }) => void;
+}
+
+interface SongListItemComponentProps {
+  song: Song;
+  comments: Comment[];
+  onAddComment: (songId: number, text: string, time: number | null) => Promise<void>;
+  commentInput: string;
+  onCommentInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  commentLoading: boolean;
+  onDeleteSong: (songId: number) => void;
+}
+
+export default function SongListItemComponent({ song, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, onDeleteSong }: SongListItemComponentProps) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [peaks, setPeaks] = useState<number[] | null>(null);
+  const [peaks, setPeaks] = useState<(Float32Array | number[])[] | undefined>(undefined);
   const [duration, setDuration] = useState<number | undefined>(undefined);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const pathname = typeof window !== 'undefined' ? window.location.origin : '';
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Fetch the precomputed waveform .dat file and decode it
@@ -38,9 +73,10 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
         const buffer = await res.arrayBuffer();
         const decoded = decodeDatFile(buffer);
         if (isMounted) {
-          setPeaks(decoded);
+          // Always set as array of number[]
+          setPeaks([decoded]);
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
@@ -53,12 +89,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     if (!waveformRef.current || !peaks) return;
     // Use API proxy endpoint for audio file
     const audioUrl = `/api/project/${song.projectId}/song/audio?file=${encodeURIComponent(song.filePath)}`;
-    // Try both shapes for peaks
-    const peaksShape = Array.isArray(peaks[0]) ? '2D' : '1D';
-    let peaksOption: any = peaks;
-    if (peaksShape === '1D') {
-      peaksOption = [peaks];
-    }
+    // peaks is always (Float32Array | number[])[]
+    const peaksOption = peaks;
     const usedDuration = duration || 30;
     const ws = WaveSurfer.create({
       container: waveformRef.current,
@@ -99,13 +131,13 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
     // Find the regions plugin instance from the active plugins array
     const plugins = ws?.getActivePlugins?.();
     const regions = plugins && Array.isArray(plugins)
-      ? (plugins.find((p: any) => p && p.constructor && p.constructor.name === 'RegionsPlugin') as any)
+      ? plugins.find((p) => p && p.constructor && p.constructor.name === 'RegionsPlugin')
       : undefined;
     if (!ws || !regions) return;
-    regions.clear();
-    (comments || []).forEach((comment: any) => {
+    (regions as unknown as RegionPlugin).clear();
+    (comments || []).forEach((comment) => {
       if (comment.time !== undefined && comment.time !== null) {
-        regions.addRegion({
+        (regions as unknown as RegionPlugin).addRegion({
           start: comment.time,
           end: comment.time + 0.1,
           color: 'rgba(59,130,246,0.5)',
@@ -140,16 +172,16 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
   };
 
   // Handle Enter key for comment input
-  const handleCommentInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !commentLoading) {
-      e.preventDefault();
+  const handleCommentInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && !commentLoading) {
+      event.preventDefault();
       handleAddCommentWithTime();
     }
   };
 
   // Seek to a comment's time
-  const handleSeekToTime = (time: number) => {
-    if (wavesurferRef.current) {
+  const handleSeekToTime = (time?: number) => {
+    if (typeof time === 'number' && wavesurferRef.current) {
       wavesurferRef.current.setTime(time);
     }
   };
@@ -273,7 +305,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
       <div>
         <h3 className="mb-2 text-sm">Comments</h3>
         <ul className="mb-2">
-          {(comments || []).map((comment: any) => (
+          {(comments || []).map((comment) => (
             <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
               <span className='text-sm'>
                 {comment.time !== undefined && comment.time !== null && (
@@ -288,8 +320,8 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
                 )}
                 {comment.text}
               </span>
-              <span className="text-xs text-gray-400 ml-2 text-right flex-1">{comment.user.username}</span>
-              <span className="text-xs text-gray-400 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+              <span className="text-xs text-gray-400 ml-2 text-right flex-1">{comment.user?.username}</span>
+              <span className="text-xs text-gray-400 ml-2">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
             </li>
           ))}
         </ul>
@@ -297,7 +329,7 @@ export default function SongListItemComponent({ song, comments, onAddComment, co
           <input
             type="text"
             value={commentInput || ''}
-            onChange={e => onCommentInputChange(song.id, e.target.value)}
+            onChange={e => onCommentInputChange(e)}
             className="flex-1 border rounded px-2 py-1"
             placeholder="Add a comment..."
             onKeyDown={handleCommentInputKeyDown}

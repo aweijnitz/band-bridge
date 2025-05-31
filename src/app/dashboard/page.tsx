@@ -1,27 +1,20 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
-import Link from 'next/link';
-import ProjectCardComponent from './ProjectCardComponent';
-import ProjectModalComponent from './ProjectModalComponent';
-import { useRouter } from 'next/navigation';
 import LoginFormComponent from "../components/LoginFormComponent";
 import ProjectListComponent from './ProjectListComponent';
-
-const PROJECT_STATUS = ["open", "released", "archived"] as const;
+import ProjectModalComponent from './ProjectModalComponent';
 
 type Band = {
   id: number;
   name: string;
 };
 
-type ProjectStatus = typeof PROJECT_STATUS[number];
-
 type Project = {
   id: number;
   name: string;
   bandName: string;
   owner: string;
-  status: ProjectStatus;
+  status: 'open' | 'released' | 'archived';
   createdAt: string;
   bandId?: number;
 };
@@ -33,13 +26,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
-  const [form, setForm] = useState<{ name: string; status: ProjectStatus; bandId?: number }>({ name: '', status: 'open', bandId: 0 });
   const [error, setError] = useState<string | null>(null);
   const createNameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
-  const [userId, setUserId] = useState<number | null>(null);
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [createForm, setCreateForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number }>({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number }>({ name: '', status: 'open', bandId: 0 });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Check authentication on mount
   useEffect(() => {
@@ -58,7 +55,6 @@ export default function DashboardPage() {
     fetch('/api/mine')
       .then(res => {
         if (!res.ok) {
-          // If not authenticated, force login
           setIsLoggedIn(false);
           return null;
         }
@@ -66,13 +62,13 @@ export default function DashboardPage() {
       })
       .then(data => {
         if (!data) return;
-        setUserId(data.userId);
         if (!data.bands) {
           setBands([]);
           setSelectedBand(null);
           return;
         }
-        const bands = data.bands.map((b: any) => ({ id: b.bandId, name: b.bandName }));
+        setCurrentUserId(data.userId || null);
+        const bands = data.bands.map((b: { bandId: number; bandName: string }) => ({ id: b.bandId, name: b.bandName }));
         setBands(bands);
         if (bands.length === 1) {
           setSelectedBand(bands[0]);
@@ -108,69 +104,6 @@ export default function DashboardPage() {
       editNameInputRef.current.focus();
     }
   }, [showEdit]);
-
-  const handleCreate = async () => {
-    setError(null);
-    if (!userId) {
-      setError('User not loaded');
-      return;
-    }
-    const res = await fetch('/api/project', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.name,
-        ownerId: userId,
-        status: form.status,
-        bandId: form.bandId
-      }),
-    });
-    if (res.ok) {
-      const newProject = await res.json();
-      setProjects((prev) => [...prev, newProject]);
-      setShowCreate(false);
-      setForm({ name: '', status: 'open', bandId: 0 });
-    } else {
-      const err = await res.json();
-      setError(err.error || 'Failed to create project');
-    }
-  };
-
-  const handleEdit = async () => {
-    if (!showEdit) return;
-    setError(null);
-    const res = await fetch(`/api/project/${showEdit.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.name,
-        ownerId: userId,
-        status: form.status,
-        bandId: form.bandId
-      }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setProjects((prev) => prev.map(p => p.id === updated.id ? updated : p));
-      setShowEdit(null);
-    } else {
-      const err = await res.json();
-      setError(err.error || 'Failed to update project');
-    }
-  };
-
-  const handleArchive = async (id: number) => {
-    setError(null);
-    const res = await fetch(`/api/project/${id}/archive`, { method: 'POST' });
-    if (res.ok) {
-      const updated = await res.json();
-      setProjects((prev) => prev.map(p => p.id === updated.id ? updated : p));
-    } else {
-      const err = await res.json();
-      setError(err.error || 'Failed to archive project');
-    }
-  };
-  
 
   const handleDelete = async (id: number) => {
     setError(null);
@@ -217,7 +150,7 @@ export default function DashboardPage() {
         </div>
         <button
           onClick={() => {
-            setForm({ name: '', status: 'open', bandId: selectedBand?.id ?? 0 });
+            setCreateForm({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
             setShowCreate(true);
           }}
           className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-500"
@@ -239,9 +172,10 @@ export default function DashboardPage() {
             <ProjectListComponent
               projects={projects}
               state="open"
-              selectedBand={selectedBand}
-              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-              onArchive={handleArchive}
+              onEdit={(p) => {
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setShowEdit(p);
+              }}
               onDelete={handleDelete}
             />
           </div>
@@ -251,9 +185,10 @@ export default function DashboardPage() {
             <ProjectListComponent
               projects={projects}
               state="released"
-              selectedBand={selectedBand}
-              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-              onArchive={handleArchive}
+              onEdit={(p) => {
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setShowEdit(p);
+              }}
               onDelete={handleDelete}
             />
           </div>
@@ -263,47 +198,90 @@ export default function DashboardPage() {
             <ProjectListComponent
               projects={projects}
               state="archived"
-              selectedBand={selectedBand}
-              onEdit={(p) => { setShowEdit(p); setForm({ name: p.name, status: p.status as ProjectStatus, bandId: selectedBand?.id ?? 0 }); }}
-              onArchive={handleArchive}
+              onEdit={(p) => {
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setShowEdit(p);
+              }}
               onDelete={handleDelete}
             />
           </div>
         </div>
       )}
-      <ProjectModalComponent
-        open={showCreate}
-        form={{ ...form, bandId: selectedBand?.id ?? 0 }}
-        bandName={selectedBand?.name || 'My Band'}
-        onFormChange={setForm}
-        onClose={() => setShowCreate(false)}
-        onCreate={handleCreate}
-        loading={loading}
-        error={error}
-        mode="create"
-      />
-      <ProjectModalComponent
-        open={!!showEdit}
-        form={{ ...form, bandId: selectedBand?.id ?? 0 }}
-        bandName={selectedBand?.name || 'My Band'}
-        onFormChange={setForm}
-        onClose={() => setShowEdit(null)}
-        onCreate={handleEdit}
-        loading={loading}
-        error={error}
-        mode="edit"
-      />
+      {showCreate && selectedBand && (
+        <ProjectModalComponent
+          open={showCreate}
+          form={createForm}
+          bandName={selectedBand.name}
+          onFormChange={setCreateForm}
+          onClose={() => { setShowCreate(false); setCreateError(null); }}
+          onCreate={async () => {
+            setCreateLoading(true);
+            setCreateError(null);
+            try {
+              const res = await fetch('/api/project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...createForm, bandId: selectedBand.id, ownerId: currentUserId }),
+              });
+              if (!res.ok) {
+                const err = await res.json();
+                setCreateError(err.error || 'Failed to create project');
+              } else {
+                setShowCreate(false);
+                setCreateForm({ name: '', status: 'open', bandId: selectedBand.id });
+                // Optionally refresh projects
+                (async () => {
+                  const newProject = await res.json();
+                  setProjects((prev) => [...prev, newProject]);
+                })();
+              }
+            } finally {
+              setCreateLoading(false);
+            }
+          }}
+          loading={createLoading}
+          error={createError}
+          mode="create"
+        />
+      )}
+      {showEdit && (
+        <ProjectModalComponent
+          open={!!showEdit}
+          form={editForm}
+          bandName={selectedBand?.name || ''}
+          onFormChange={setEditForm}
+          onClose={() => { setShowEdit(null); setEditError(null); }}
+          onCreate={async () => {
+            setEditLoading(true);
+            setEditError(null);
+            try {
+              const res = await fetch(`/api/project/${showEdit.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...editForm, bandId: editForm.bandId, ownerId: currentUserId }),
+              });
+              if (!res.ok) {
+                const err = await res.json();
+                setEditError(err.error || 'Failed to update project');
+              } else {
+                setShowEdit(null);
+                setEditForm({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
+                // Optionally refresh projects
+                (async () => {
+                  const updatedProject = await res.json();
+                  setProjects((prev) => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+                })();
+              }
+            } finally {
+              setEditLoading(false);
+            }
+          }}
+          loading={editLoading}
+          error={editError}
+          mode="edit"
+        />
+      )}
     </div>
   );
 }
 
-export async function getCurrentUserInfo() {
-  try {
-    const res = await fetch('/api/auth/session');
-    if (!res.ok) return null;
-    const { userId, userName, bandName, bandId } = await res.json();
-    return { userId, userName, bandName, bandId };
-  } catch {
-    return null;
-  }
-} 
