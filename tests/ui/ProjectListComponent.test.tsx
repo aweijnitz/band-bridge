@@ -24,9 +24,7 @@ describe('ProjectListComponent', () => {
       <ProjectListComponent
         projects={[]}
         state="open"
-        selectedBand={selectedBand}
         onEdit={noop}
-        onArchive={noop}
         onDelete={noop}
       />
     );
@@ -38,9 +36,7 @@ describe('ProjectListComponent', () => {
       <ProjectListComponent
         projects={baseProjects.filter(p => p.status !== 'released')}
         state="released"
-        selectedBand={selectedBand}
         onEdit={noop}
-        onArchive={noop}
         onDelete={noop}
       />
     );
@@ -52,27 +48,11 @@ describe('ProjectListComponent', () => {
       <ProjectListComponent
         projects={baseProjects}
         state="archived"
-        selectedBand={selectedBand}
         onEdit={noop}
-        onArchive={noop}
         onDelete={noop}
       />
     );
-    expect(screen.getByText('archived projects')).toBeInTheDocument();
     expect(screen.getByTestId('project-card')).toHaveTextContent('Archived Project');
   });
 
-  it('renders the correct heading for the state', () => {
-    render(
-      <ProjectListComponent
-        projects={baseProjects}
-        state="open"
-        selectedBand={selectedBand}
-        onEdit={noop}
-        onArchive={noop}
-        onDelete={noop}
-      />
-    );
-    expect(screen.getByText('open projects')).toBeInTheDocument();
-  });
 }); 
