@@ -31,8 +31,8 @@ app.use('/admin', requireAdminApiKey, adminRouter);
 
 // TODO: Add user, band, and API key management routes here
 
-const PORT = process.env.PORT || 4002;
-app.listen(PORT, () => {
+const PORT = parseInt(process.env.PORT || '4002');
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[admin] Listening on port ${PORT}`);
 });
 
