@@ -47,7 +47,7 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 2. **Copy and edit environment variables:**
    ```sh
    cp .env.example .env
-   cp src/backend/admin/.env.example .env
+   cp src/backend/admin/.env.example src/backend/admin/.env.example/.env
    # Edit .env as needed (e.g., set ADMIN_API_KEY, DB_URL, ...)
    ```
 ### Changing/setting database password
