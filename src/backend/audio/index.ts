@@ -3,12 +3,14 @@ import fileUpload, { UploadedFile } from 'express-fileupload';
 import path from 'path';
 import fs from 'fs/promises';
 import { execFile } from 'child_process';
+import { parseSize } from './parseSize';
 
 const app = express();
 const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
 const FILESTORE_PATH = '/assetfilestore'; // Mapped to volume in docker-compose.yml
+const MAX_UPLOAD_SIZE = parseSize(process.env.MAX_UPLOAD_SIZE || '1GB');
 
-app.use(fileUpload());
+app.use(fileUpload({ limits: { fileSize: MAX_UPLOAD_SIZE } }));
 app.use(express.json());
 
 // Health check
@@ -86,6 +88,10 @@ app.get('/files/:fileName.dat', (req: Request, res: Response) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Audio microservice listening on port ${PORT}`);
-}); 
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Audio microservice listening on port ${PORT}`);
+  });
+}
+
+export default app;
