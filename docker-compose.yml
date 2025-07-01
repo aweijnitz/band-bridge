@@ -16,6 +16,7 @@ services:
       - db
     environment:
       - AUDIO_SERVICE_PORT=4001
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE}
     volumes:
       - asset_filestore:/assetfilestore
   admin:

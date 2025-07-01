@@ -293,6 +293,7 @@ All audio and waveform file requests from the frontend are proxied through the N
 - `NEXT_PUBLIC_BAND_NAME`: The band name shown in the UI.
 - `AUDIO_SERVICE_PORT`: Port for the audio microservice (default: 4001, internal only).
 - `AUDIO_SERVICE_URL`: URL for the audio microservice (used by the Next.js API to proxy requests).
+- `MAX_UPLOAD_SIZE`: Maximum allowed file upload size for the audio microservice. Accepts human readable values like `1GB`, `500MB`, `0.5GB` (default: `1GB`).
 - `ADMIN_API_KEY`: Static API key for admin microservice.
 - `DATABASE_URL`: Postgres connection string for all services.
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`: For NextAuth.js (if used).
