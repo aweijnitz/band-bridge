@@ -61,7 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
  * @returns A response object
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireSession();
+  await requireSession(req);
   try {
     const { id: idStr } = await params;
     const formData = await req.formData();
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
  * @returns A response object
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireSession();
+  await requireSession(req);
   try {
     const { id: idStr } = await params;
     const projectId = parseInt(idStr, 10);

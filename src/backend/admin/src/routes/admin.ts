@@ -2,6 +2,11 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import bcrypt from 'bcrypt';
 import prisma from '../prisma.js';
+import { signJwt } from '../../../lib/jwt.js';
+
+const keyRate: Record<string, { count: number; first: number }> = {};
+const KEY_LIMIT = 5;
+const KEY_WINDOW = 60 * 1000;
 
 const router = express.Router();
 
@@ -85,15 +90,26 @@ router.post(
   '/users/:userId/apikeys',
   async (req: express.Request, res: express.Response) => {
     const { userId } = req.params;
+    const rate = keyRate[userId] || { count: 0, first: Date.now() };
+    if (Date.now() - rate.first < KEY_WINDOW) {
+      if (rate.count >= KEY_LIMIT) {
+        return res.status(429).json({ error: 'Too many keys' });
+      }
+    } else {
+      rate.count = 0;
+      rate.first = Date.now();
+    }
+    rate.count++;
+    keyRate[userId] = rate;
+
     console.log('Creating API key for user');
-    // Generate a random API key
-    const apiKey = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-    const keyHash = await bcrypt.hash(apiKey, 12);
+    const token = signJwt({ sub: Number(userId), type: 'api-key' }, 10 * 24 * 60 * 60);
+    const keyHash = await bcrypt.hash(token, 12);
     try {
       const created = await prisma.apiKey.create({
         data: { userId: Number(userId), keyHash }
       });
-      res.status(201).json({ id: created.id, apiKey }); // Only show plain key once
+      res.status(201).json({ id: created.id, apiKey: token });
     } catch {
       res.status(500).json({ error: 'Failed to create API key' });
     }

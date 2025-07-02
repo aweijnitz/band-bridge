@@ -27,10 +27,6 @@ jest.mock('../../src/generated/prisma', () => {
           })
         ),
       },
-      session: {
-        findUnique: jest.fn().mockResolvedValue({ userId: 1, user: { id: 1, username: 'testuser' }, expiresAt: new Date(Date.now() + 1000000) }),
-        deleteMany: jest.fn().mockResolvedValue({}),
-      },
     })),
   };
 });
