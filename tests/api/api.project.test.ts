@@ -17,10 +17,6 @@ jest.mock('../../src/generated/prisma', () => {
         ),
         findMany: jest.fn().mockResolvedValue([]),
       },
-      session: {
-        findUnique: jest.fn().mockResolvedValue({ userId: 1, user: { id: 1, username: 'testuser' }, expiresAt: new Date(Date.now() + 1000000) }),
-        deleteMany: jest.fn().mockResolvedValue({}),
-      },
     })),
     ProjectStatus: { open: 'open', released: 'released', archived: 'archived' },
   };

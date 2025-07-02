@@ -14,7 +14,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   // Check session for all other pages
-  const session = await validateSession();
+  const session = await validateSession(req);
   if (!session) {
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('redirect', pathname);

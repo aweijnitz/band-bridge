@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
  * @returns A response object
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
-  await requireSession();
+  await requireSession(req);
   try {
     const { songId: songIdStr } = await params;
     const songId = parseInt(songIdStr, 10);
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ song
  * @returns A response object
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ songId: string }> }) {
-  const session = await requireSession();
+  const session = await requireSession(req);
   try {
     const { songId: songIdStr } = await params;
     const songId = parseInt(songIdStr, 10);

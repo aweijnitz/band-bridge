@@ -35,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireSession();
+    await requireSession(req);
     const { id } = await params;
     const idNr = parseInt(id, 10);
     if (isNaN(idNr)) {
@@ -72,7 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireSession();
+    await requireSession(req);
     const { id } = await params;
     const idNr = parseInt(id, 10);
     if (isNaN(idNr)) {

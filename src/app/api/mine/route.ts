@@ -4,8 +4,8 @@ import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
-  const session = await requireSession();
+export async function GET(req: Request) {
+  const session = await requireSession(req as any);
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.userId },

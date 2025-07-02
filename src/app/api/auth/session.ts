@@ -1,52 +1,40 @@
 import { cookies } from 'next/headers';
-import { PrismaClient } from '@/generated/prisma';
-import crypto from 'crypto';
+import { signJwt, verifyJwt } from '@/lib/jwt';
+import { NextRequest } from 'next/server';
 
-const prisma = new PrismaClient();
-const SESSION_COOKIE = 'session_id';
-const SESSION_MAX_AGE = 365 * 24 * 60 * 60; // 365 days in seconds
+const TOKEN_COOKIE = 'token';
+const SESSION_MAX_AGE = 24 * 60 * 60; // 24h
 
 export async function createSession(userId: number) {
-  const sessionId = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
-  await prisma.session.create({
-    data: {
-      sessionId,
-      userId,
-      expiresAt,
-    },
-  });
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, sessionId, {
+  const token = signJwt({ sub: userId, type: 'session' }, SESSION_MAX_AGE);
+  const store = await cookies();
+  store.set(TOKEN_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     maxAge: SESSION_MAX_AGE,
     path: '/',
   });
-  return sessionId;
+  return token;
 }
 
-export async function validateSession(): Promise<{ userId: number } | null> {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!sessionId) return null;
-  const session = await prisma.session.findUnique({
-    where: { sessionId },
-    include: { user: true },
-  });
-  if (!session || session.expiresAt < new Date()) {
-    cookieStore.set(SESSION_COOKIE, '', { maxAge: 0, path: '/' });
-    return null;
+export async function validateSession(req?: NextRequest): Promise<{ userId: number; type: string } | null> {
+  let token: string | undefined;
+  if (req) {
+    const auth = req.headers.get('authorization');
+    if (auth?.startsWith('Bearer ')) token = auth.slice(7);
   }
-  return { userId: session.userId };
+  if (!token) {
+    const store = await cookies();
+    token = store.get(TOKEN_COOKIE)?.value;
+  }
+  if (!token) return null;
+  const payload = verifyJwt(token);
+  if (!payload) return null;
+  return { userId: Number(payload.sub), type: String(payload.type) };
 }
 
 export async function deleteSession() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
-  if (sessionId) {
-    await prisma.session.deleteMany({ where: { sessionId } });
-    cookieStore.set(SESSION_COOKIE, '', { maxAge: 0, path: '/' });
-  }
-} 
+  const store = await cookies();
+  store.set(TOKEN_COOKIE, '', { maxAge: 0, path: '/' });
+}

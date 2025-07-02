@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
  * @returns 
  */
 export async function POST(req: NextRequest) {
-  await requireSession();
+  await requireSession(req);
   try {
     const body = await req.json();
     const { name, ownerId, status, bandId } = body;
