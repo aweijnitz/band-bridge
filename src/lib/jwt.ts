@@ -10,7 +10,7 @@ function base64url(data: Buffer | string) {
     .replace(/=+$/, '');
 }
 
-export function signJwt(payload: Record<string, any>, expiresIn: number) {
+export function signJwt(payload: Record<string, unknown>, expiresIn: number) {
   const header = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const exp = Math.floor(Date.now() / 1000) + expiresIn;
   const body = base64url(JSON.stringify({ ...payload, exp }));
@@ -21,7 +21,7 @@ export function signJwt(payload: Record<string, any>, expiresIn: number) {
   return `${base}.${signature}`;
 }
 
-export function verifyJwt(token: string): Record<string, any> | null {
+export function verifyJwt(token: string): Record<string, unknown> | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const [headerB64, bodyB64, signature] = parts;
