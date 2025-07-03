@@ -15,6 +15,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/generated/prisma$': '<rootDir>/src/generated/prisma',
     '^@/generated/prisma/(.*)$': '<rootDir>/src/generated/prisma/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '^next/(.*)$': '<rootDir>/node_modules/next/$1',
