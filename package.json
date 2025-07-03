@@ -12,6 +12,7 @@
     "test:api": "jest --testPathPattern=tests/api",
     "test:ui": "jest --testPathPattern=tests/ui",
     "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
     "reset": "npx prisma migrate reset --force && rm -rf public/filestore/*",
     "start:audio-service": "npm start --prefix src/backend/audio",
     "build:audio-service": "npm run build --prefix src/backend/audio"
@@ -55,6 +56,7 @@
     "supertest": "^7.1.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.3.4",
+    "@playwright/test": "^1.53.2",
     "typescript": "^5"
   }
 }
