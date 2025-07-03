@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "start": "node dist/index.js",
-    "build": "echo 'Run build:prep if build fails on prisma files' && tsc",
-    "build:prep": "rm -rf generated && mkdir -p generated && cp -R ../../../src/generated/prisma generated",
+    "start": "node dist/src/index.js",
+    "build": "echo 'Run build:prep if build fails on prisma files' && tsc && cp -R generated dist/generated",
+    "build:prep": "rm -rf generated && mkdir -p generated && cp -R ../../../src/generated/prisma generated && rm -f generated/prisma/index.ts",
     "clean": "rm -rf dist generated"
   },
   "dependencies": {
