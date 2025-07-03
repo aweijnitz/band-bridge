@@ -35,4 +35,18 @@ if (!global.fetch) {
       json: () => Promise.resolve({}),
     })
   );
-} 
+}
+
+// React Testing Library expects React.act to be defined. Attach the
+// implementation from react-dom/test-utils when running tests.
+const React = require('react');
+if (!React.act) {
+  const ReactDOM = require('react-dom');
+  React.act = callback => {
+    let result;
+    ReactDOM.flushSync(() => {
+      result = callback();
+    });
+    return result;
+  };
+}
