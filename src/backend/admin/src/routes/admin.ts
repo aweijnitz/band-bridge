@@ -2,7 +2,17 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import bcrypt from 'bcrypt';
 import prisma from '../prisma.js';
-import { signJwt } from '../../../lib/jwt.js';
+import crypto from 'crypto';
+
+function signJwt(payload: Record<string, unknown>, expiresIn: number) {
+  const secret = process.env.JWT_SECRET || 'changeme';
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + expiresIn;
+  const body = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  const base = `${header}.${body}`;
+  const signature = crypto.createHmac('sha256', secret).update(base).digest('base64url');
+  return `${base}.${signature}`;
+}
 
 const keyRate: Record<string, { count: number; first: number }> = {};
 const KEY_LIMIT = 5;

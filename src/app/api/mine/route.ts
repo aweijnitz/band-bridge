@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../auth/requireSession';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: Request) {
-  const session = await requireSession(req as any);
+export async function GET(req: NextRequest) {
+  const session = await requireSession(req);
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
