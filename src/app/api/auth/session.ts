@@ -21,7 +21,7 @@ export async function createSession(userId: number) {
 export async function validateSession(req?: NextRequest): Promise<{ userId: number; type: string } | null> {
   let token: string | undefined;
   if (req) {
-    const auth = req.headers.get('authorization');
+    const auth = req.headers?.get('authorization');
     if (auth?.startsWith('Bearer ')) token = auth.slice(7);
   }
   if (!token) {
