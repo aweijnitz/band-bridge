@@ -304,6 +304,7 @@ All audio and waveform file requests from the frontend are proxied through the N
 - **Waveform Pre-Compute:** On upload, the audio microservice runs `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
 - **File Storage:** All audio and waveform files are stored in a Docker volume at `/assetfilestore` inside the audio microservice. They are not accessible from the Next.js app or the host filesystem.
 - **Tests:** Run `npm test` to execute all API and UI tests.
+- **E2E Tests:** Run `npm run test:e2e` to execute the Playwright end-to-end suite.
 
 ---
 

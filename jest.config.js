@@ -11,7 +11,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/filestore/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/filestore/', '/tests/e2e/'],
   moduleNameMapper: {
     '^@/generated/prisma$': '<rootDir>/src/generated/prisma',
     '^@/generated/prisma/(.*)$': '<rootDir>/src/generated/prisma/$1',
