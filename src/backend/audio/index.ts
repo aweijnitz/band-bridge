@@ -19,6 +19,9 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
+const AUDIO_EXTS = ['.mp3', '.wav'];
+const VIDEO_EXTS = ['.mp4', '.mov', '.avi', '.h264', '.m4v'];
+
 async function handleUpload(req: Request, res: Response): Promise<void> {
   if (!req.files || !(req.files as Record<string, UploadedFile>).file) {
     res.status(400).json({ error: 'No file uploaded' });
@@ -30,26 +33,29 @@ async function handleUpload(req: Request, res: Response): Promise<void> {
   try {
     await fs.mkdir(FILESTORE_PATH, { recursive: true });
     await fs.writeFile(filePath, file.data);
-    // Precompute waveform
-    const datPath = `${filePath}.dat`;
-    await new Promise<void>((resolve, reject) => {
-      execFile('audiowaveform', ['-i', filePath, '-o', datPath, '--pixels-per-second', '1024'], (err) => {
-        if (err) reject(err);
-        else resolve();
+    const ext = path.extname(file.name).toLowerCase();
+    if (AUDIO_EXTS.includes(ext)) {
+      const datPath = `${filePath}.dat`;
+      await new Promise<void>((resolve, reject) => {
+        execFile('audiowaveform', ['-i', filePath, '-o', datPath, '--pixels-per-second', '1024'], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
-    });
+    }
     res.status(201).json({ fileName });
   } catch (err: unknown) {
     res.status(500).json({ error: 'Failed to upload or process file', details: err instanceof Error ? err.message : err });
   }
 }
 
+
 app.post('/upload', handleUpload);
 
-// Delete a single song file and its .dat file
-app.delete('/delete-song', async (req: Request, res: Response) => {
+// Delete a single media file and its .dat file if audio
+app.delete('/delete-media', async (req: Request, res: Response) => {
   const { fileName } = req.body;
-  console.log('Deleting song', fileName);
+  console.log('Deleting media', fileName);
   if (!fileName) {
     res.status(400).json({ error: 'Missing fileName' });
     return;
@@ -57,9 +63,12 @@ app.delete('/delete-song', async (req: Request, res: Response) => {
   const filePath = path.join(FILESTORE_PATH, fileName);
   try {
     await fs.unlink(filePath);
-    try {
-      await fs.unlink(filePath + '.dat');
-    } catch {}
+    const ext = path.extname(fileName).toLowerCase();
+    if (AUDIO_EXTS.includes(ext)) {
+      try {
+        await fs.unlink(filePath + '.dat');
+      } catch {}
+    }
     res.json({ success: true, deleted: fileName });
   } catch (err: unknown) {
     res.status(500).json({ error: 'Failed to delete file', details: err instanceof Error ? err.message : String(err) });

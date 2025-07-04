@@ -1,4 +1,4 @@
-import { POST } from '../../src/app/api/project/[id]/song/route';
+import { POST } from '../../src/app/api/project/[id]/media/route';
 
 // Mock node-fetch to simulate audio microservice
 jest.mock('node-fetch', () => jest.fn());
@@ -16,7 +16,7 @@ jest.mock('form-data', () => {
 jest.mock('../../src/generated/prisma', () => {
   return {
     PrismaClient: jest.fn().mockImplementation(() => ({
-      song: {
+      media: {
         create: jest.fn().mockImplementation(({ data }) =>
           Promise.resolve({
             id: 123,
@@ -36,7 +36,7 @@ type MockFile = {
   arrayBuffer: () => Promise<ArrayBuffer>;
 };
 
-describe('POST /api/project/[id]/song (unit)', () => {
+describe('POST /api/project/[id]/media (unit)', () => {
   beforeEach(() => {
     ((fetch as any) as jest.Mock).mockReset();
   });
@@ -58,21 +58,21 @@ describe('POST /api/project/[id]/song (unit)', () => {
     } as any;
   }
 
-  it('should upload a song with file and projectId', async () => {
+  it('should upload a media with file and projectId', async () => {
     ((fetch as any) as jest.Mock).mockResolvedValue({
       ok: true,
-      json: async () => ({ fileName: '1710000000000_mysong.mp3' }),
+      json: async () => ({ fileName: '1710000000000_mymedia.mp3' }),
       statusText: 'OK',
     });
-    const file = mockFile('mysong.mp3', 'dummydata');
+    const file = mockFile('mymedia.mp3', 'dummydata');
     const req = { formData: async () => mockFormData(file) } as any;
     const params = Promise.resolve({ id: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(201);
     const data = await res.json();
-    expect(data.title).toBe('mysong');
+    expect(data.title).toBe('mymedia');
     expect(data.projectId).toBe(1);
-    expect(data.filePath).toContain('mysong.mp3');
+    expect(data.filePath).toContain('mymedia.mp3');
   });
 
   it('should return 400 for missing file', async () => {

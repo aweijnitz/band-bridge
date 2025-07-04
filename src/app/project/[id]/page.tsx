@@ -2,16 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigationComponent';
-import SongListItemComponent from './SongListItemComponent';
+import MediaListItemComponent from './MediaListItemComponent';
 import LoginFormComponent from "../../components/LoginFormComponent";
 import { useParams } from 'next/navigation';
 
-interface Song {
+interface Media {
   id: number;
   projectId: number;
   filePath: string;
   title: string;
   uploadDate: string;
+  type: 'audio' | 'video' | 'image';
 }
 
 interface Comment {
@@ -29,7 +30,7 @@ interface Project {
 }
 
 // Helper type guards
-function isSong(obj: unknown): obj is Song {
+function isMedia(obj: unknown): obj is Media {
   if (typeof obj !== 'object' || obj === null) return false;
   const o = obj as Record<string, unknown>;
   return (
@@ -37,7 +38,8 @@ function isSong(obj: unknown): obj is Song {
     typeof o.projectId === 'number' &&
     typeof o.filePath === 'string' &&
     typeof o.title === 'string' &&
-    typeof o.uploadDate === 'string'
+    typeof o.uploadDate === 'string' &&
+    typeof o.type === 'string'
   );
 }
 function isComment(obj: unknown): obj is Comment {
@@ -68,22 +70,22 @@ function normalizeComment(raw: unknown): Comment {
     createdAt: o.createdAt as string | undefined,
   };
 }
-function normalizeSong(raw: unknown): Song {
-  if (!isSong(raw)) throw new Error('Invalid song');
-  return raw as Song;
+function normalizeMedia(raw: unknown): Media {
+  if (!isMedia(raw)) throw new Error('Invalid media');
+  return raw as Media;
 }
 
 export default function ProjectPage() {
   const params = useParams();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [mediaList, setMediaList] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [comments, setComments] = useState<{ [songId: number]: Comment[] }>({});
-  const [commentInputs, setCommentInputs] = useState<{ [songId: number]: string }>({});
-  const [commentLoading, setCommentLoading] = useState<{ [songId: number]: boolean }>({});
+  const [comments, setComments] = useState<{ [mediaId: number]: Comment[] }>({});
+  const [commentInputs, setCommentInputs] = useState<{ [mediaId: number]: string }>({});
+  const [commentLoading, setCommentLoading] = useState<{ [mediaId: number]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -114,31 +116,31 @@ export default function ProjectPage() {
       })
       .catch(() => setProject(null));
 
-    fetch(`/api/project/${id}/song`)
+    fetch(`/api/project/${id}/media`)
       .then(res => {
         if (!res.ok) {
-          setError('Failed to load songs');
+          setError('Failed to load media');
           return null;
         }
         return res.json();
       })
       .then((data: unknown[]) => {
         if (!data) return;
-        setSongs(data.filter(isSong).map(normalizeSong));
-        // Fetch comments for each song
-        data.filter(isSong).forEach((song) => {
-          fetch(`/api/project/${id}/song/${song.id}/comment`)
+        setMediaList(data.filter(isMedia).map(normalizeMedia));
+        // Fetch comments for each media
+        data.filter(isMedia).forEach((media) => {
+          fetch(`/api/project/${id}/media/${media.id}/comment`)
             .then(res => {
               if (!res.ok) return [];
               return res.json();
             })
             .then((commentsData: unknown[]) => setComments(prev => ({
               ...prev,
-              [song.id]: commentsData.filter(isComment).map(normalizeComment),
+              [media.id]: commentsData.filter(isComment).map(normalizeComment),
             })));
         });
       })
-      .catch(() => setError('Failed to load songs'))
+      .catch(() => setError('Failed to load media'))
       .finally(() => setLoading(false));
   }, [id, isLoggedIn]);
 
@@ -156,39 +158,39 @@ export default function ProjectPage() {
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`/api/project/${id}/song`, {
+    const res = await fetch(`/api/project/${id}/media`, {
       method: 'POST',
       body: formData,
     });
     if (res.ok) {
-      const newSongRaw = await res.json();
-      if (isSong(newSongRaw)) {
-        setSongs((prev) => [normalizeSong(newSongRaw), ...prev]);
-        // Fetch comments for the new song
-        fetch(`/api/project/${id}/song/${newSongRaw.id}/comment`)
+      const newMediaRaw = await res.json();
+      if (isMedia(newMediaRaw)) {
+        setMediaList((prev) => [normalizeMedia(newMediaRaw), ...prev]);
+        // Fetch comments for the new media
+        fetch(`/api/project/${id}/media/${newMediaRaw.id}/comment`)
           .then(res => res.json())
           .then((commentsData: unknown[]) => setComments(prev => ({
             ...prev,
-            [newSongRaw.id]: commentsData.filter(isComment).map(normalizeComment),
+            [newMediaRaw.id]: commentsData.filter(isComment).map(normalizeComment),
           })));
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     } else {
       const err = await res.json();
-      setError(err.error || 'Failed to upload song');
+      setError(err.error || 'Failed to upload media');
     }
     setUploading(false);
   };
 
-  const handleCommentChange = (songId: number, value: string) => {
-    setCommentInputs((prev) => ({ ...prev, [songId]: value }));
+  const handleCommentChange = (mediaId: number, value: string) => {
+    setCommentInputs((prev) => ({ ...prev, [mediaId]: value }));
   };
 
-  const handleAddComment = async (songId: number, text: string, time: number | null) => {
-    const commentValue = text !== undefined ? text : commentInputs[songId];
+  const handleAddComment = async (mediaId: number, text: string, time: number | null) => {
+    const commentValue = text !== undefined ? text : commentInputs[mediaId];
     if (!commentValue) return;
-    setCommentLoading((prev) => ({ ...prev, [songId]: true }));
-    const res = await fetch(`/api/project/${id}/song/${songId}/comment`, {
+    setCommentLoading((prev) => ({ ...prev, [mediaId]: true }));
+    const res = await fetch(`/api/project/${id}/media/${mediaId}/comment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: commentValue, time }),
@@ -198,27 +200,27 @@ export default function ProjectPage() {
       if (isComment(newCommentRaw)) {
         setComments((prev) => ({
           ...prev,
-          [songId]: [...(prev[songId] || []), normalizeComment(newCommentRaw)],
+          [mediaId]: [...(prev[mediaId] || []), normalizeComment(newCommentRaw)],
         }));
-        setCommentInputs((prev) => ({ ...prev, [songId]: '' }));
+        setCommentInputs((prev) => ({ ...prev, [mediaId]: '' }));
       }
     }
-    setCommentLoading((prev) => ({ ...prev, [songId]: false }));
+    setCommentLoading((prev) => ({ ...prev, [mediaId]: false }));
   };
 
-  const handleDeleteSong = async (songId: number) => {
+  const handleDeleteMedia = async (mediaId: number) => {
     setError(null);
-    const res = await fetch(`/api/project/${id}/song/${songId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/project/${id}/media/${mediaId}`, { method: 'DELETE' });
     if (res.ok) {
-      setSongs((prev) => prev.filter((s) => s.id !== songId));
+      setMediaList((prev) => prev.filter((s) => s.id !== mediaId));
       setComments((prev) => {
         const newComments = { ...prev };
-        delete newComments[songId];
+        delete newComments[mediaId];
         return newComments;
       });
     } else {
       const err = await res.json();
-      setError(err.error || 'Failed to delete song');
+      setError(err.error || 'Failed to delete media');
     }
   };
 
@@ -228,17 +230,17 @@ export default function ProjectPage() {
       <h1 className="text-2xl mb-6">{project ? project.name : `Project #${id}`}</h1>
       <div className="mb-8">
         <label className="block mb-2 font-semibold">
-          {project?.status !== 'open' ? 'Project not open' : 'Upload new song'}
+          {project?.status !== 'open' ? 'Project not open' : 'Upload new media'}
         </label>
         <label
           className={`inline-block px-4 py-2 rounded ${project?.status === 'open' && isLoggedIn ? 'bg-indigo-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
-          title={isLoggedIn ? (project?.status === 'open' ? 'Upload new song' : 'Project not open') : 'Sign in to upload'}
+          title={isLoggedIn ? (project?.status === 'open' ? 'Upload new media' : 'Project not open') : 'Sign in to upload'}
         >
           {uploading ? 'Uploading...' : 'Select File'}
           <input
             ref={fileInputRef}
             type="file"
-            accept="audio/mp3,audio/wav"
+            accept="audio/mp3,audio/wav,video/mp4,video/quicktime,video/x-msvideo,video/mp4"
             className="hidden"
             onChange={handleFileChange}
             disabled={uploading || project?.status !== 'open' || !isLoggedIn}
@@ -248,20 +250,20 @@ export default function ProjectPage() {
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {loading ? (
         <div>Loading...</div>
-      ) : songs.length === 0 ? (
-        <div className="text-gray-600">No songs in this project yet.</div>
+      ) : mediaList.length === 0 ? (
+        <div className="text-gray-600">No media in this project yet.</div>
       ) : (
         <div className="space-y-8">
-          {songs.map((song) => (
-            <SongListItemComponent
-              key={song.id}
-              song={song}
-              comments={comments[song.id]}
+          {mediaList.map((media) => (
+            <MediaListItemComponent
+              key={media.id}
+              media={media}
+              comments={comments[media.id]}
               onAddComment={handleAddComment}
-              commentInput={commentInputs[song.id]}
-              onCommentInputChange={(e) => handleCommentChange(song.id, e.target.value)}
-              commentLoading={commentLoading[song.id]}
-              onDeleteSong={handleDeleteSong}
+              commentInput={commentInputs[media.id]}
+              onCommentInputChange={(e) => handleCommentChange(media.id, e.target.value)}
+              commentLoading={commentLoading[media.id]}
+              onDeleteMedia={handleDeleteMedia}
             />
           ))}
         </div>
