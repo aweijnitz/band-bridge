@@ -1,6 +1,6 @@
 # Band Bridge
 
-A web app for band collaboration: create projects, upload songs, and comment on songs with time-based markers. Built with Next.js, React, TypeScript, Tailwind CSS, and Postgres (via Prisma). Audio files and waveform data are managed by a dedicated microservice. User, band, and API key management is handled by a secure admin microservice.
+A web app for band collaboration: create projects, upload media, and comment on media with time-based markers. Built with Next.js, React, TypeScript, Tailwind CSS, and Postgres (via Prisma). Audio and video files are managed by a dedicated microservice. User, band, and API key management is handled by a secure admin microservice.
 
 <picture>
    <img src="doc/project-dashboard.png" alt="Screenshot project dashboard" width="320" />
@@ -11,7 +11,7 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 </picture>
 
 <picture>
-   <img src="doc/song-view.png" alt="Screenshot song view" width="320" />
+   <img src="doc/media-view.png" alt="Screenshot song view" width="320" />
 </picture>
 
 ---
@@ -19,10 +19,10 @@ A web app for band collaboration: create projects, upload songs, and comment on 
 ## Features
 
 - Band/project management
-- Song upload (MP3/WAV), download, and deletion
+- Media upload (audio MP3/WAV and video MP4/MOV/AVI/H.264), download, and deletion
 - Precomputed waveform rendering for instant audio visualization
-- Time-based comments on songs
-- Deep links to song details (with share button)
+- Time-based comments on media items
+- Deep links to media details (with share button)
 - Responsive, modern UI (Next.js, Tailwind CSS)
 - Robust API and UI test suite
 - Admin microservice for user, band, and API key management There is no admin UI. Use curl (see examples below)
@@ -107,7 +107,7 @@ band-bridge/
   - Located at `src/backend/audio/`
   - Handles audio file uploads, deletions, and waveform pre-computation using [BBC audiowaveform](https://github.com/bbc/audiowaveform).
   - All audio and waveform files are stored in a Docker volume mounted at `/assetfilestore` inside the audio microservice container. This volume is not directly accessible from the host or the Next.js app.
-  - Waveform data is saved as `.dat` files next to the audio files (e.g., `song.wav` → `song.wav.dat`).
+  - Waveform data is saved as `.dat` files next to the audio files (e.g., `media.wav` → `media.wav.dat`).
 
 - **Admin Microservice:**
   - Located at `src/backend/admin/`
@@ -118,8 +118,8 @@ band-bridge/
 
 ## UI/UX
 
-- Download, delete, and share buttons are consistently placed at the top right of each song card and the song details page.
-- Sharing a song copies a deep link to the clipboard and shows a toast notification.
+- Download, delete, and share buttons are consistently placed at the top right of each media card and the media details page.
+- Sharing a media copies a deep link to the clipboard and shows a toast notification.
 - All file and waveform requests are proxied through the Next.js API for security and abstraction.
 
 
@@ -127,7 +127,7 @@ band-bridge/
 
 ## Deep Linking & Sharing
 
-Every song has a unique URL (`/project/[projectId]/song/[songId]`). Use the share button to copy a direct link to the clipboard.
+Every media item has a unique URL (`/project/[projectId]/media/[mediaId]`). Use the share button to copy a direct link to the clipboard.
 
 ---
 
@@ -138,18 +138,18 @@ Every song has a unique URL (`/project/[projectId]/song/[songId]`). Use the shar
 curl http://localhost:4001/health
 ```
 
-### Upload Audio File (with waveform pre-compute)
+### Upload Media File
 ```sh
-curl -F "file=@/path/to/song.wav" http://localhost:4001/upload
+curl -F "file=@/path/to/file.mp4" http://localhost:4001/upload
 ```
-- Response: `{ "fileName": "<timestamp>_song.wav" }`
-- Also creates `<timestamp>_song.wav.dat` in the filestore.
+- Response: `{ "fileName": "<timestamp>_file.wav" }`
+- Also creates `<timestamp>_file.wav.dat` in the filestore.
 
-### Delete Audio File and Waveform Data
+### Delete Media File
 ```sh
-curl -X DELETE http://localhost:4001/delete-song \
+curl -X DELETE http://localhost:4001/delete-media \
   -H "Content-Type: application/json" \
-  -d '{"fileName":"<timestamp>_song.wav"}'
+  -d '{"fileName":"<timestamp>_file.mp4"}'
 ```
 - Deletes both the audio file and its `.dat` waveform file.
 
@@ -238,47 +238,47 @@ curl -X POST http://localhost:4002/admin/apikeys/1/revoke \
   curl -X DELETE http://localhost:3000/api/project/1
   ```
 
-### Songs
+### Media
 
-- **List Songs in Project**
+- **List Media in Project**
   ```sh
-  curl http://localhost:3000/api/project/1/song
+  curl http://localhost:3000/api/project/1/media
   ```
-- **Get Song**
+- **Get Media**
   ```sh
-  curl http://localhost:3000/api/project/1/song/2
+  curl http://localhost:3000/api/project/1/media/2
   ```
-- **Upload Song**
+- **Upload Media (audio/video)**
   ```sh
-  curl -F "file=@/path/to/song.wav" -F "title=My Song" http://localhost:3000/api/project/1/song
+  curl -F "file=@/path/to/file.mp4" -F "title=My File" http://localhost:3000/api/project/1/media
   ```
-- **Delete Song**
+- **Delete Media**
   ```sh
-  curl -X DELETE http://localhost:3000/api/project/1/song/2
+  curl -X DELETE http://localhost:3000/api/project/1/media/2
   ```
 
 ### Comments
 
-- **List Comments for Song**
+- **List Comments for Media**
   ```sh
-  curl http://localhost:3000/api/project/1/song/2/comment
+  curl http://localhost:3000/api/project/1/media/2/comment
   ```
 - **Add Comment (requires authentication)**
   ```sh
-  curl -X POST http://localhost:3000/api/project/1/song/2/comment \
+  curl -X POST http://localhost:3000/api/project/1/media/2/comment \
     -H "Content-Type: application/json" \
-    -d '{"text":"Great solo!","time":42.5}'
+    -d '{"text":"Great comment!","time":42.5}'
   ```
 
 ### Audio Proxy Endpoints
 
 - **Download Audio File**
   ```sh
-  curl http://localhost:3000/api/project/1/song/audio?file=<fileName>
+  curl http://localhost:3000/api/project/1/media/audio?file=<fileName>
   ```
 - **Download Waveform Data**
   ```sh
-  curl http://localhost:3000/api/project/1/song/waveform?file=<fileName>
+  curl http://localhost:3000/api/project/1/media/waveform?file=<fileName>
   ```
 
 ---

@@ -60,7 +60,7 @@ model Project {
   owner      User     @relation("UserProjects", fields: [ownerId], references: [id])
   ownerId    Int
   status     ProjectStatus
-  songs      Song[]
+  media      Media[]
 }
 
 enum ProjectStatus {
@@ -69,20 +69,27 @@ enum ProjectStatus {
   archived
 }
 
-model Song {
+enum MediaType {
+  audio
+  video
+  image
+}
+
+model Media {
   id         Int      @id @default(autoincrement())
   project    Project  @relation(fields: [projectId], references: [id])
   projectId  Int
   title      String
   filePath   String
+  type       MediaType
   uploadDate DateTime @default(now())
   comments   Comment[]
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  song      Song     @relation(fields: [songId], references: [id])
-  songId    Int
+  media     Media    @relation(fields: [mediaId], references: [id])
+  mediaId   Int
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   text      String

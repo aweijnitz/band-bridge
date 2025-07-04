@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import SongListItemComponent from "../../src/app/project/[id]/SongListItemComponent";
+import MediaListItemComponent from "../../src/app/project/[id]/MediaListItemComponent";
 import { act } from "react";
 
 jest.mock("wavesurfer.js", () => {
@@ -41,11 +41,11 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("SongListItemComponent", () => {
-  const mockSong = {
+describe("MediaListItemComponent", () => {
+  const mockMedia = {
     id: 1,
     projectId: 1,
-    title: "Test Song",
+    title: "Test Media",
     filePath: "test.mp3",
     uploadDate: new Date().toISOString(),
   };
@@ -71,14 +71,14 @@ describe("SongListItemComponent", () => {
   it("renders song title and upload date", async () => {
     await act(() => {
       render(
-        <SongListItemComponent
-          song={mockSong}
+        <MediaListItemComponent
+          media={mockMedia}
           comments={mockComments}
           onAddComment={mockOnAddComment}
           commentInput=""
           onCommentInputChange={mockOnCommentInputChange}
           commentLoading={false}
-          onDeleteSong={jest.fn()}
+          onDeleteMedia={jest.fn()}
         />
       );
     });
@@ -89,14 +89,14 @@ describe("SongListItemComponent", () => {
   it("renders comments", async () => {
     await act(() => {
       render(
-        <SongListItemComponent
-          song={mockSong}
+        <MediaListItemComponent
+          media={mockMedia}
           comments={mockComments}
           onAddComment={mockOnAddComment}
           commentInput=""
           onCommentInputChange={mockOnCommentInputChange}
           commentLoading={false}
-          onDeleteSong={jest.fn()}
+          onDeleteMedia={jest.fn()}
         />
       );
     });
@@ -117,14 +117,14 @@ describe("SongListItemComponent", () => {
     );
     await act(async () => {
       render(
-        <SongListItemComponent
-          song={mockSong}
+        <MediaListItemComponent
+          media={mockMedia}
           comments={mockComments}
           onAddComment={mockOnAddComment}
           commentInput=""
           onCommentInputChange={mockOnCommentInputChange}
           commentLoading={false}
-          onDeleteSong={jest.fn()}
+          onDeleteMedia={jest.fn()}
         />
       );
       let input: HTMLElement | null = null;
@@ -141,14 +141,14 @@ describe("SongListItemComponent", () => {
   it("calls onAddComment when Add button is clicked", async () => {
     await act(async () => {
       render(
-        <SongListItemComponent
-          song={mockSong}
+        <MediaListItemComponent
+          media={mockMedia}
           comments={mockComments}
           onAddComment={mockOnAddComment}
           commentInput="Test comment"
           onCommentInputChange={mockOnCommentInputChange}
           commentLoading={false}
-          onDeleteSong={jest.fn()}
+          onDeleteMedia={jest.fn()}
         />
       );
     });
@@ -160,18 +160,18 @@ describe("SongListItemComponent", () => {
   it("shows Delete button always, enabled only if projectStatus is archived", async () => {
     await act(async () => {
       render(
-        <SongListItemComponent
-          song={mockSong}
+        <MediaListItemComponent
+          media={mockMedia}
           comments={mockComments}
           onAddComment={jest.fn()}
           commentInput={""}
           onCommentInputChange={jest.fn()}
           commentLoading={false}
-          onDeleteSong={jest.fn()}
+          onDeleteMedia={jest.fn()}
         />
       );
     });
-    const btn2 = await screen.findByLabelText("Delete Song");
+    const btn2 = await screen.findByLabelText("Delete Media");
     expect(btn2).toBeInTheDocument();
     expect(btn2).not.toBeDisabled();
   });
