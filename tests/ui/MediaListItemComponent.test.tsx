@@ -82,7 +82,7 @@ describe("MediaListItemComponent", () => {
         />
       );
     });
-    expect(screen.getByText("Test Song")).toBeInTheDocument();
+    expect(screen.getByText("Test Media")).toBeInTheDocument();
     expect(screen.getByText(/Uploaded:/)).toBeInTheDocument();
   });
 
@@ -171,7 +171,7 @@ describe("MediaListItemComponent", () => {
         />
       );
     });
-    const btn2 = await screen.findByLabelText("Delete Media");
+    const btn2 = await screen.findByLabelText("Delete Song");
     expect(btn2).toBeInTheDocument();
     expect(btn2).not.toBeDisabled();
   });
