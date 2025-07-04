@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import adminRouter from './routes/admin.js';
+import adminRouter from './routes/admin';
 
 dotenv.config();
 
@@ -18,7 +18,8 @@ if (!ADMIN_API_KEY) {
 function requireAdminApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
   const auth = req.header('Authorization');
   if (!auth || auth !== `Bearer ${ADMIN_API_KEY}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
   next();
 }
