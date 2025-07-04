@@ -3,7 +3,7 @@ import { DELETE } from '../../src/app/api/project/[id]/route';
 jest.mock('../../src/generated/prisma', () => {
   return {
     PrismaClient: jest.fn().mockImplementation(() => ({
-      song: {
+      media: {
         findMany: jest.fn().mockResolvedValue([
           { id: 1, filePath: 'song1.mp3' },
           { id: 2, filePath: 'song2.mp3' },
@@ -56,14 +56,14 @@ describe('DELETE /api/project/[id]', () => {
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/delete-song'),
+      expect.stringContaining('/delete-media'),
       expect.objectContaining({
         method: 'DELETE',
         body: expect.stringContaining('song1.mp3'),
       })
     );
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/delete-song'),
+      expect.stringContaining('/delete-media'),
       expect.objectContaining({
         method: 'DELETE',
         body: expect.stringContaining('song2.mp3'),
@@ -79,7 +79,7 @@ describe('DELETE /api/project/[id]', () => {
     // Patch project.delete to throw
     const { PrismaClient } = require('../../src/generated/prisma');
     PrismaClient.mockImplementationOnce(() => ({
-      song: {
+      media: {
         findMany: jest.fn().mockResolvedValue([]),
         deleteMany: jest.fn().mockResolvedValue({}),
       },

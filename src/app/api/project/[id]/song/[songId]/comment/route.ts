@@ -5,7 +5,7 @@ import { requireSession } from '../../../../../auth/requireSession';
 const prisma = new PrismaClient();
 
 /**
- * Get all comments for a song
+ * Get all comments for a media item
  * @param req - The request object
  * @param params - The parameters object
  * @returns A response object
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ song
       return NextResponse.json({ error: 'Invalid song id' }, { status: 400 });
     }
     const comments = await prisma.comment.findMany({
-      where: { songId },
+      where: { mediaId: songId },
       orderBy: { createdAt: 'asc' },
       include: { user: { select: { username: true } } },
     });
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ song
 }
 
 /**
- * Add a comment to a song
+ * Add a comment to a media item
  * @param req - The request object
  * @param params - The parameters object
  * @returns A response object
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ son
     }
     const comment = await prisma.comment.create({
       data: {
-        songId,
+        mediaId: songId,
         userId: session.userId,
         text,
         time: typeof time === 'number' ? time : undefined,

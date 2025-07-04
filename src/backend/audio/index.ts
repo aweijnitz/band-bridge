@@ -20,7 +20,6 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 const AUDIO_EXTS = ['.mp3', '.wav'];
-const VIDEO_EXTS = ['.mp4', '.mov', '.avi', '.h264', '.m4v'];
 
 async function handleUpload(req: Request, res: Response): Promise<void> {
   if (!req.files || !(req.files as Record<string, UploadedFile>).file) {

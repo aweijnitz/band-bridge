@@ -12,7 +12,7 @@ describe('BreadcrumbNavigationComponent', () => {
     render(<BreadcrumbNavigationComponent />);
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.queryByText(/Project/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Song/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Media/)).not.toBeInTheDocument();
   });
 
   it('renders Dashboard and project link if projectId is given', () => {
@@ -20,14 +20,14 @@ describe('BreadcrumbNavigationComponent', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Project #42')).toBeInTheDocument();
     expect(screen.getByText('Project #42').closest('a')).toHaveAttribute('href', '/project/42');
-    expect(screen.queryByText(/Song/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Media/)).not.toBeInTheDocument();
   });
 
-  it('renders Dashboard, project, and song if both projectId and songId are given', () => {
+  it('renders Dashboard, project, and media if both projectId and songId are given', () => {
     render(<BreadcrumbNavigationComponent projectId="42" songId="7" />);
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Project #42')).toBeInTheDocument();
-    expect(screen.getByText('Song #7')).toBeInTheDocument();
+    expect(screen.getByText('Media #7')).toBeInTheDocument();
   });
 
   it('uses projectName and songTitle if provided', () => {

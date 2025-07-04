@@ -146,7 +146,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
         });
       }
     });
-  }, [comments]);
+  }, [comments, media.type]);
 
   const handlePlayPause = () => {
     if (media.type === 'audio' && wavesurferRef.current) {

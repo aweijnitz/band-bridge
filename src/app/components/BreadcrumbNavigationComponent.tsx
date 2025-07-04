@@ -1,11 +1,13 @@
 "use client";
 import Link from 'next/link';
 
-export default function BreadcrumbNavigationComponent({ projectId, projectName, songId, songTitle }: {
+export default function BreadcrumbNavigationComponent({ projectId, projectName, songId, songTitle, mediaId, mediaTitle }: {
   projectId?: string;
   projectName?: string;
   songId?: string;
   songTitle?: string;
+  mediaId?: string;
+  mediaTitle?: string;
 }) {
   return (
     <nav className="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
@@ -23,10 +25,10 @@ export default function BreadcrumbNavigationComponent({ projectId, projectName, 
             </li>
           </>
         )}
-        {songId && (
+        {(songId || mediaId) && (
           <>
             <li><span className="mx-2">/</span></li>
-            <li className="text-zinc-800">{songTitle ? songTitle : `Song #${songId}`}</li>
+            <li className="text-zinc-800">{songTitle || mediaTitle ? (songTitle || mediaTitle) : `Media #${songId || mediaId}`}</li>
           </>
         )}
       </ol>

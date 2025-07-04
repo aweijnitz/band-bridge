@@ -7,7 +7,7 @@ import { requireSession } from '../../../auth/requireSession';
 const prisma = new PrismaClient();
 
 /**
- * Get all songs for a project
+ * Get all media items for a project
  * @param req - The request object
  * @param params - The parameters object
  * @returns A response object
@@ -44,18 +44,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (isNaN(projectId)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
-    const songs = await prisma.song.findMany({
+    const songs = await prisma.media.findMany({
       where: { projectId },
       orderBy: { uploadDate: 'desc' },
     });
     return NextResponse.json(songs);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch songs', details: error instanceof Error ? error.message : error }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch media items', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 }
 
 /**
- * Upload a song to a project
+ * Upload a media item to a project
  * @param req - The request object
  * @param params - The parameters object
  * @returns A response object
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     let title = formData.get('title') as string | null;
     const projectId = parseInt(idStr, 10);
     if (!file || isNaN(projectId)) {
-      console.warn('[Song Upload] Missing file or invalid project id', { file, projectId });
+      console.warn('[Media Upload] Missing file or invalid project id', { file, projectId });
       return NextResponse.json({ error: 'Missing file or invalid project id', details: { file: !!file, projectId } }, { status: 400 });
     }
     // Convert web File to Node.js Buffer
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     if (!uploadRes.ok) {
       const err = await uploadRes.json().catch(() => ({}));
-      console.error('[Song Upload] Audio service upload failed', err);
+      console.error('[Media Upload] Audio service upload failed', err);
       return NextResponse.json({ error: 'Audio service upload failed', details: err.error || uploadRes.statusText }, { status: 500 });
     }
     const { fileName } = await uploadRes.json();
@@ -97,17 +97,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       title = file.name.replace(/\.[^/.]+$/, '');
     }
     try {
-      const song = await prisma.song.create({
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const mediaType = ['mp3', 'wav'].includes(fileExtension || '') ? 'audio' : 
+                      ['mp4', 'mov', 'avi', 'h264', 'm4v'].includes(fileExtension || '') ? 'video' : 'audio';
+      
+      const song = await prisma.media.create({
         data: {
           projectId,
           title,
           filePath: fileName,
+          type: mediaType,
         },
       });
-      //console.log('[Song Upload] Song created in DB:', song);
+      //console.log('[Media Upload] Media created in DB:', song);
       return NextResponse.json(song, { status: 201 });
     } catch (dbError: unknown) {
-      console.error('[Song Upload] DB error creating song', {
+      console.error('[Media Upload] DB error creating media item', {
         projectId,
         title,
         fileName,
@@ -118,7 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         hint = 'Check that the project with id ' + projectId + ' exists in the database.';
       }
       return NextResponse.json({
-        error: 'Failed to create song in database',
+        error: 'Failed to create media item in database',
         details: dbError instanceof Error ? dbError.message : dbError,
         projectId,
         fileName,
@@ -126,13 +131,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('[Song Upload] Unexpected error', error);
-    return NextResponse.json({ error: 'Failed to upload song', details: error instanceof Error ? error.message : error }, { status: 500 });
+    console.error('[Media Upload] Unexpected error', error);
+    return NextResponse.json({ error: 'Failed to upload media item', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 }
 
 /**
- * Delete all songs for a project
+ * Delete all media items for a project
  * @param req - The request object
  * @param params - The parameters object
  * @returns A response object
@@ -145,17 +150,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (isNaN(projectId)) {
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
-    const songs = await prisma.song.findMany({
+    const songs = await prisma.media.findMany({
       where: { projectId },
     });
     if (songs.length === 0) {
-      return NextResponse.json({ error: 'No songs found for the project' }, { status: 404 });
+      return NextResponse.json({ error: 'No media items found for the project' }, { status: 404 });
     }
-    await prisma.song.deleteMany({
+    await prisma.media.deleteMany({
       where: { projectId },
     });
-    return NextResponse.json({ message: 'All songs deleted successfully' }, { status: 200 });
+    return NextResponse.json({ message: 'All media items deleted successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete songs', details: error instanceof Error ? error.message : error }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete media items', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 } 

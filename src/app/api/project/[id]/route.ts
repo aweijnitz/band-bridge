@@ -83,29 +83,29 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
-    // Find all songs for the project
-    const songs = await prisma.song.findMany({ where: { projectId: idNr } });
+    // Find all media for the project
+    const media = await prisma.media.findMany({ where: { projectId: idNr } });
     const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-    // Delete all song files via audio microservice
-    for (const song of songs) {
-      if (song.filePath) {
+    // Delete all media files via audio microservice
+    for (const mediaItem of media) {
+      if (mediaItem.filePath) {
         try {
-          await fetch(`${audioServiceUrl}/delete-song`, {
+          await fetch(`${audioServiceUrl}/delete-media`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName: song.filePath }),
+            body: JSON.stringify({ fileName: mediaItem.filePath }),
           });
         } catch (err) {
           // Log and continue
-          console.error('Failed to delete song file via audio service', song.filePath, err);
+          console.error('Failed to delete media file via audio service', mediaItem.filePath, err);
         }
       }
     }
-    // Delete all comments for these songs
-    const songIds = songs.map(song => song.id);
-    await prisma.comment.deleteMany({ where: { songId: { in: songIds } } });
-    // Delete all songs for the project
-    await prisma.song.deleteMany({ where: { projectId: idNr } });
+    // Delete all comments for these media items
+    const mediaIds = media.map(mediaItem => mediaItem.id);
+    await prisma.comment.deleteMany({ where: { mediaId: { in: mediaIds } } });
+    // Delete all media for the project
+    await prisma.media.deleteMany({ where: { projectId: idNr } });
     // Delete the project
     const deleted = await prisma.project.delete({ where: { id: idNr } });
     return NextResponse.json({ success: true, deleted });
