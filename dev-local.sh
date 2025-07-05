@@ -29,6 +29,9 @@ fi
 # Build Prisma client used by all services
 npm run generate:schema
 
+# Run database migrations
+npx prisma migrate deploy
+
 # Prepare admin service Prisma files
 npm --prefix src/backend/admin run build:prep
 
@@ -37,6 +40,7 @@ export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@
 export AUDIO_SERVICE_URL="${AUDIO_SERVICE_URL:-http://localhost:4001}"
 export ADMIN_API_KEY="${ADMIN_API_KEY:-changeme}"
 export MAX_UPLOAD_SIZE="${MAX_UPLOAD_SIZE:-1GB}"
+export FILESTORE_PATH="${FILESTORE_PATH:-./filestore}"
 
 # Start audio microservice with hot reload
 npx nodemon --watch src/backend/audio --ext ts \
@@ -52,10 +56,11 @@ admin_pid=$!
 npm run dev &
 web_pid=$!
 
-# Function to create test user
-create_test_user() {
+# Function to create test band and user
+create_test_data() {
   local test_username="testuser"
   local test_password="testuser"
+  local test_bandname="testband"
   
   echo "Waiting for services to be ready..."
   sleep 5
@@ -65,34 +70,82 @@ create_test_user() {
     sleep 1
   done
   
+  # Create test band first
+  echo "Creating test band..."
+  band_response=$(curl -s -w "%{http_code}" -X POST http://localhost:4002/admin/bands \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${ADMIN_API_KEY}" \
+    -d "{\"name\":\"${test_bandname}\"}" \
+    2>/dev/null)
+  
+  band_http_code="${band_response: -3}"
+  band_response_body="${band_response%???}"
+  
+  if [ "$band_http_code" = "201" ]; then
+    echo "✅ Test band created successfully!"
+    band_id=$(echo "$band_response_body" | grep -o '"id":[0-9]*' | grep -o '[0-9]*')
+  elif [ "$band_http_code" = "409" ]; then
+    echo "ℹ️  Test band already exists"
+    # For simplicity, assume band ID is 1 if it already exists
+    band_id=1
+  else
+    echo "❌ Failed to create test band (HTTP ${band_http_code})"
+    echo "Response: ${band_response_body}"
+    return 1
+  fi
+  
+  # Create test user
   echo "Creating test user..."
-  response=$(curl -s -w "%{http_code}" -X POST http://localhost:4002/admin/users \
+  user_response=$(curl -s -w "%{http_code}" -X POST http://localhost:4002/admin/users \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${ADMIN_API_KEY}" \
     -d "{\"username\":\"${test_username}\",\"password\":\"${test_password}\"}" \
     2>/dev/null)
   
-  http_code="${response: -3}"
-  response_body="${response%???}"
+  user_http_code="${user_response: -3}"
+  user_response_body="${user_response%???}"
   
-  if [ "$http_code" = "201" ]; then
+  if [ "$user_http_code" = "201" ]; then
     echo "✅ Test user created successfully!"
-    echo "📝 Login credentials:"
-    echo "   Username: ${test_username}"
-    echo "   Password: ${test_password}"
-  elif [ "$http_code" = "409" ]; then
+    user_id=$(echo "$user_response_body" | grep -o '"id":[0-9]*' | grep -o '[0-9]*')
+  elif [ "$user_http_code" = "409" ]; then
     echo "ℹ️  Test user already exists"
-    echo "📝 Login credentials:"
-    echo "   Username: ${test_username}"
-    echo "   Password: ${test_password}"
+    # For simplicity, assume user ID is 1 if it already exists
+    user_id=1
   else
-    echo "❌ Failed to create test user (HTTP ${http_code})"
-    echo "Response: ${response_body}"
+    echo "❌ Failed to create test user (HTTP ${user_http_code})"
+    echo "Response: ${user_response_body}"
+    return 1
   fi
+  
+  # Assign user to band
+  echo "Assigning test user to test band..."
+  assignment_response=$(curl -s -w "%{http_code}" -X POST http://localhost:4002/admin/bands/${band_id}/users \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${ADMIN_API_KEY}" \
+    -d "{\"userId\":${user_id}}" \
+    2>/dev/null)
+  
+  assignment_http_code="${assignment_response: -3}"
+  assignment_response_body="${assignment_response%???}"
+  
+  if [ "$assignment_http_code" = "201" ]; then
+    echo "✅ Test user assigned to test band successfully!"
+  elif [ "$assignment_http_code" = "409" ]; then
+    echo "ℹ️  Test user already assigned to test band"
+  else
+    echo "❌ Failed to assign test user to test band (HTTP ${assignment_http_code})"
+    echo "Response: ${assignment_response_body}"
+  fi
+  
+  echo "📝 Login credentials:"
+  echo "   Username: ${test_username}"
+  echo "   Password: ${test_password}"
+  echo "   Band: ${test_bandname}"
 }
 
-# Create test user in background
-create_test_user &
+# Create test data in background
+create_test_data &
 
 cleanup() {
   echo "Stopping..."

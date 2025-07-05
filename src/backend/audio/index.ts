@@ -7,7 +7,7 @@ import { parseSize } from './parseSize';
 
 const app = express();
 const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
-const FILESTORE_PATH = '/assetfilestore'; // Mapped to volume in docker-compose.yml
+const FILESTORE_PATH = process.env.FILESTORE_PATH || '/assetfilestore'; // Mapped to volume in docker-compose.yml
 const MAX_UPLOAD_SIZE = parseSize(process.env.MAX_UPLOAD_SIZE || '1GB');
 
 app.use(fileUpload({ 

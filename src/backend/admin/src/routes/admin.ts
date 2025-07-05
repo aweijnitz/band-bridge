@@ -66,8 +66,13 @@ router.post(
     try {
       const band = await prisma.band.create({ data: { name } });
       res.status(201).json({ id: band.id, name: band.name });
-    } catch {
-      res.status(500).json({ error: 'Failed to create band' });
+    } catch (err: unknown) {
+      console.error('Error creating band:', err);
+      if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'P2002') {
+        res.status(409).json({ error: 'Band name already exists' });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to create band', details: (err as { message?: string }).message });
     }
   }
 );

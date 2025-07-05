@@ -44,7 +44,7 @@ export async function register() {
         } else {
           console.error(`❌ Audio service health check failed: HTTP ${res.status}`);
         }
-      } catch (err) {
+      } catch {
         if (i === retries - 1) {
           console.log('⚠️  Audio service not ready yet (this is normal during startup)');
         } else {
