@@ -52,6 +52,48 @@ admin_pid=$!
 npm run dev &
 web_pid=$!
 
+# Function to create test user
+create_test_user() {
+  local test_username="testuser"
+  local test_password="testuser"
+  
+  echo "Waiting for services to be ready..."
+  sleep 5
+  
+  # Wait for admin service to be ready
+  while ! curl -s http://localhost:4002/health >/dev/null 2>&1; do
+    sleep 1
+  done
+  
+  echo "Creating test user..."
+  response=$(curl -s -w "%{http_code}" -X POST http://localhost:4002/admin/users \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${ADMIN_API_KEY}" \
+    -d "{\"username\":\"${test_username}\",\"password\":\"${test_password}\"}" \
+    2>/dev/null)
+  
+  http_code="${response: -3}"
+  response_body="${response%???}"
+  
+  if [ "$http_code" = "201" ]; then
+    echo "✅ Test user created successfully!"
+    echo "📝 Login credentials:"
+    echo "   Username: ${test_username}"
+    echo "   Password: ${test_password}"
+  elif [ "$http_code" = "409" ]; then
+    echo "ℹ️  Test user already exists"
+    echo "📝 Login credentials:"
+    echo "   Username: ${test_username}"
+    echo "   Password: ${test_password}"
+  else
+    echo "❌ Failed to create test user (HTTP ${http_code})"
+    echo "Response: ${response_body}"
+  fi
+}
+
+# Create test user in background
+create_test_user &
+
 cleanup() {
   echo "Stopping..."
   kill $audio_pid $admin_pid $web_pid 2>/dev/null || true
