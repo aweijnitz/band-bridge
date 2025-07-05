@@ -2,7 +2,7 @@
 set -e
 
 # Start a local Postgres instance if one is not already running
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postrespass}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-testpass}"
 PG_CONTAINER_NAME="bandbridge-dev-postgres"
 
 if command -v docker >/dev/null; then
