@@ -10,7 +10,12 @@ const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
 const FILESTORE_PATH = '/assetfilestore'; // Mapped to volume in docker-compose.yml
 const MAX_UPLOAD_SIZE = parseSize(process.env.MAX_UPLOAD_SIZE || '1GB');
 
-app.use(fileUpload({ limits: { fileSize: MAX_UPLOAD_SIZE } }));
+app.use(fileUpload({ 
+  limits: { fileSize: MAX_UPLOAD_SIZE },
+  limitHandler: (req, res) => {
+    res.status(413).json({ error: 'File too large' });
+  }
+}));
 app.use(express.json());
 
 // Health check
@@ -78,22 +83,38 @@ app.delete('/delete-media', async (req: Request, res: Response) => {
 app.get('/files/:fileName', (req: Request, res: Response) => {
   const { fileName } = req.params;
   const filePath = path.join(FILESTORE_PATH, fileName);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      res.status(404).json({ error: 'File not found' });
-    }
-  });
+  
+  // Check if this is a waveform data request
+  if (fileName.endsWith('.dat')) {
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.log('Waveform file not found:', filePath);
+        if (!res.headersSent) {
+          res.status(404).json({ error: 'Waveform data not found' });
+        }
+      }
+    });
+  } else {
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.log('File not found:', filePath);
+        if (!res.headersSent) {
+          res.status(404).json({ error: 'File not found' });
+        }
+      }
+    });
+  }
 });
 
-// Serve waveform data files
-app.get('/files/:fileName.dat', (req: Request, res: Response) => {
-  const { fileName } = req.params;
-  const datPath = path.join(FILESTORE_PATH, fileName + '.dat');
-  res.sendFile(datPath, (err) => {
-    if (err) {
-      res.status(404).json({ error: 'Waveform data not found' });
-    }
-  });
+// Add error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  // Don't exit the process, just log the error
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason);
+  // Don't exit the process, just log the error
 });
 
 if (require.main === module) {

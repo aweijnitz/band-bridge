@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "darwin", "debian-openssl-1.1.x", "linux-arm64-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  userBands UserBand[]
+  projects  Project[]
+  comments  Comment[]
+  sessions  Session[]
+  apiKeys   ApiKey[]
+}
+
+model Band {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userBands UserBand[]
+  projects  Project[]
+}
+
+model UserBand {
+  id     Int @id @default(autoincrement())
+  userId Int
+  bandId Int
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bandId])
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  userId      Int
+  bandId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  archivedAt  DateTime?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  
+  media Media[]
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  fileName  String
+  title     String
+  projectId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  timeCode  Float?
+  userId    Int
+  mediaId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ApiKey {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  keyHash   String
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,80 @@
+services:
+  test-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: bandbridge_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  test-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:testpass@test-db:5432/bandbridge_test
+      - AUDIO_SERVICE_URL=http://test-audio:4001
+      - ADMIN_API_KEY=test-admin-key-123
+      - NEXT_PUBLIC_BAND_NAME=Test Band
+      - JWT_SECRET=test-jwt-secret
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-audio:
+        condition: service_healthy
+      test-admin:
+        condition: service_healthy
+    volumes:
+      - test_asset_filestore:/assetfilestore
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  test-audio:
+    build:
+      context: ./src/backend/audio
+    ports:
+      - "4001:4001"
+    environment:
+      - AUDIO_SERVICE_PORT=4001
+      - MAX_UPLOAD_SIZE=1GB
+    volumes:
+      - test_asset_filestore:/assetfilestore
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  test-admin:
+    build:
+      context: ./src/backend/admin
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - DATABASE_URL=postgresql://postgres:testpass@test-db:5432/bandbridge_test
+      - ADMIN_API_KEY=test-admin-key-123
+      - JWT_SECRET=test-jwt-secret
+    depends_on:
+      test-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4002/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  test_db_data:
+  test_asset_filestore:
