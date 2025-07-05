@@ -9,11 +9,17 @@ beforeEach(() => {
 
 test('default upload limit is 1GB', () => {
   require('../../src/backend/audio/index');
-  expect(fileUploadMock.mock.calls[0][0]).toEqual({ limits: { fileSize: 1024 ** 3 } });
+  expect(fileUploadMock.mock.calls[0][0]).toEqual({ 
+    limits: { fileSize: 1024 ** 3 }, 
+    limitHandler: expect.any(Function) 
+  });
 });
 
 test('uses configured MAX_UPLOAD_SIZE', () => {
   process.env.MAX_UPLOAD_SIZE = '2MB';
   require('../../src/backend/audio/index');
-  expect(fileUploadMock.mock.calls[0][0]).toEqual({ limits: { fileSize: 2 * 1024 * 1024 } });
+  expect(fileUploadMock.mock.calls[0][0]).toEqual({ 
+    limits: { fileSize: 2 * 1024 * 1024 }, 
+    limitHandler: expect.any(Function) 
+  });
 });
