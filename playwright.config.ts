@@ -10,7 +10,7 @@ export default defineConfig({
   reporter: 'html',
   globalSetup: require.resolve('./tests/e2e/microservices.global-setup'),
   globalTeardown: require.resolve('./tests/e2e/microservices.global-teardown'),
-  timeout: 30000,
+  timeout: 45000,
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

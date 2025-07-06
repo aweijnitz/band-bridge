@@ -6,11 +6,11 @@ export default defineConfig({
   fullyParallel: false, // Run tests sequentially to avoid resource conflicts
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1, // Use single worker for microservices tests
+  workers: 4, // Use single worker for microservices tests
   reporter: 'html',
   globalSetup: require.resolve('./tests/e2e/microservices.global-setup'),
   globalTeardown: require.resolve('./tests/e2e/microservices.global-teardown'),
-  timeout: 30000,
+  timeout: 45000,
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

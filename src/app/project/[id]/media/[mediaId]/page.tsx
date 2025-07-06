@@ -93,7 +93,7 @@ export default function MediaPage() {
     async function fetchPeaks() {
       try {
         if (!media) return;
-        const res = await fetch(`/api/project/${projectId}/media/waveform?file=${encodeURIComponent(media.filePath)}`);
+        const res = await fetch(`/api/project/${projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=waveform`);
         if (!res.ok) return;
         const buffer = await res.arrayBuffer();
         const decoded = decodeDatFile(buffer);
@@ -107,7 +107,7 @@ export default function MediaPage() {
   // Setup wavesurfer for audio
   useEffect(() => {
     if (media?.type !== 'audio' || !waveformRef.current || !peaks || !media) return;
-    const audioUrl = `/api/project/${projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`;
+    const audioUrl = `/api/project/${projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`;
     let peaksOption: number[][];
     if (Array.isArray(peaks[0])) {
       // @ts-expect-error: peaks may be number[] or number[][], we handle both cases
@@ -187,7 +187,7 @@ export default function MediaPage() {
   };
   const handleDownload = () => {
     if (!media) return;
-    const url = `/api/project/${projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`;
+    const url = `/api/project/${projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`;
     const link = document.createElement('a');
     link.href = url;
     link.download = media.filePath;
@@ -302,7 +302,7 @@ export default function MediaPage() {
             <div ref={waveformRef} className="w-full min-w-0" />
           ) : (
             <video ref={videoRef} className="w-full" controls>
-              <source src={`/api/project/${projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`} />
+              <source src={`/api/project/${projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`} />
             </video>
           )}
         </div>

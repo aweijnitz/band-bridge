@@ -48,6 +48,7 @@ services:
     environment:
       - AUDIO_SERVICE_PORT=4001
       - MAX_UPLOAD_SIZE=1GB
+      - ADMIN_API_KEY=test-admin-key-123
     volumes:
       - test_asset_filestore:/assetfilestore
     healthcheck:

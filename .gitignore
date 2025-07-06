@@ -6,6 +6,10 @@
 /src/backend/admin/generated
 /src/backend/admin/dist
 
+/test-results
+/test-results/.last-run.json
+/playwright-report
+
 **node_modules**
 
 # dependencies

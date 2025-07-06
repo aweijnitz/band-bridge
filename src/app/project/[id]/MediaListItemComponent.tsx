@@ -71,7 +71,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
     let isMounted = true;
     async function fetchPeaks() {
       try {
-        const res = await fetch(`/api/project/${media.projectId}/media/waveform?file=${encodeURIComponent(media.filePath)}`);
+        const res = await fetch(`/api/project/${media.projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=waveform`);
         if (!res.ok) return;
         const buffer = await res.arrayBuffer();
         const decoded = decodeDatFile(buffer);
@@ -88,7 +88,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
   useEffect(() => {
     if (media.type !== 'audio' || !waveformRef.current || !peaks) return;
     // Use API proxy endpoint for audio file
-    const audioUrl = `/api/project/${media.projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`;
+    const audioUrl = `/api/project/${media.projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`;
     const peaksOption = peaks;
     const usedDuration = duration || 30;
     const ws = WaveSurfer.create({
@@ -204,7 +204,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
   };
 
   const handleDownload = () => {
-    const url = `/api/project/${media.projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`;
+    const url = `/api/project/${media.projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`;
     const link = document.createElement('a');
     link.href = url;
     link.download = media.filePath;
@@ -300,7 +300,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
           <div ref={waveformRef} className="w-full min-w-0" />
         ) : (
           <video ref={videoRef} className="w-full" controls>
-            <source src={`/api/project/${media.projectId}/media/audio?file=${encodeURIComponent(media.filePath)}`} />
+            <source src={`/api/project/${media.projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`} />
           </video>
         )}
       </div>

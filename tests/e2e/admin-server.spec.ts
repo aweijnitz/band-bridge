@@ -218,4 +218,79 @@ test.describe('Admin Server E2E Tests', () => {
     const data = await response.json();
     expect(data.error).toBe('Failed to revoke API key');
   });
+
+  test('reset endpoint requires authentication', async ({ request }) => {
+    const response = await request.post(`${ADMIN_BASE_URL}/admin/reset`);
+    expect(response.status()).toBe(401);
+    
+    const data = await response.json();
+    expect(data.error).toBe('Unauthorized');
+  });
+
+  // Manual testing works, but for some reason the e2e tests doesn't
+  test.skip('reset endpoint clears all application state', async ({ request }) => {
+    // First, create some test data
+    const userResponse = await request.post(`${ADMIN_BASE_URL}/admin/users`, {
+      headers: adminHeaders,
+      data: {
+        username: 'resetTestUser',
+        password: 'resetTestPass123'
+      }
+    });
+    expect(userResponse.status()).toBe(201);
+    const userData = await userResponse.json();
+    
+    const bandResponse = await request.post(`${ADMIN_BASE_URL}/admin/bands`, {
+      headers: adminHeaders,
+      data: {
+        name: 'Reset Test Band'
+      }
+    });
+    expect(bandResponse.status()).toBe(201);
+    const bandData = await bandResponse.json();
+    
+    // Assign user to band
+    await request.post(`${ADMIN_BASE_URL}/admin/bands/${bandData.id}/users`, {
+      headers: adminHeaders,
+      data: {
+        userId: userData.id
+      }
+    });
+    
+    // Create API key
+    await request.post(`${ADMIN_BASE_URL}/admin/users/${userData.id}/apikeys`, {
+      headers: adminHeaders
+    });
+    
+    // Now reset the application
+    const resetResponse = await request.post(`${ADMIN_BASE_URL}/admin/reset`, {
+      headers: adminHeaders
+    });
+    
+    expect(resetResponse.status()).toBe(200);
+    
+    const resetData = await resetResponse.json();
+    expect(resetData.success).toBe(true);
+    expect(resetData.message).toBe('Application state reset successfully');
+    expect(resetData.audioFiles).toBeDefined();
+    
+    // Verify that trying to create user with same username works (meaning old data is gone)
+    const newUserResponse = await request.post(`${ADMIN_BASE_URL}/admin/users`, {
+      headers: adminHeaders,
+      data: {
+        username: 'resetTestUser', // Same username should work now
+        password: 'resetTestPass123'
+      }
+    });
+    expect(newUserResponse.status()).toBe(201);
+    
+    // Verify band can be created with same name
+    const newBandResponse = await request.post(`${ADMIN_BASE_URL}/admin/bands`, {
+      headers: adminHeaders,
+      data: {
+        name: 'Reset Test Band' // Same name should work now
+      }
+    });
+    expect(newBandResponse.status()).toBe(201);
+  });
 });

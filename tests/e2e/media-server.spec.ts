@@ -234,4 +234,91 @@ test.describe('Media Server E2E Tests', () => {
       });
     }
   });
+
+  test('reset endpoint requires admin API key', async ({ request }) => {
+    const response = await request.post(`${AUDIO_BASE_URL}/reset`);
+    expect(response.status()).toBe(401);
+    
+    const data = await response.json();
+    expect(data.error).toBe('Unauthorized');
+  });
+
+  test('reset endpoint with invalid API key fails', async ({ request }) => {
+    const response = await request.post(`${AUDIO_BASE_URL}/reset`, {
+      headers: {
+        'Authorization': 'Bearer invalid-key'
+      }
+    });
+    expect(response.status()).toBe(401);
+    
+    const data = await response.json();
+    expect(data.error).toBe('Unauthorized');
+  });
+
+  test('reset endpoint clears all media files', async ({ request }) => {
+    // First, upload some test files
+    const fileBuffer = fs.readFileSync(TEST_AUDIO_FILE);
+    const uploadedFiles: string[] = [];
+    
+    // Upload multiple files
+    for (let i = 0; i < 3; i++) {
+      const response = await request.post(`${AUDIO_BASE_URL}/upload`, {
+        multipart: {
+          file: {
+            name: `test-file-${i}.wav`,
+            mimeType: 'audio/wav',
+            buffer: fileBuffer
+          }
+        }
+      });
+      
+      expect(response.status()).toBe(201);
+      const data = await response.json();
+      uploadedFiles.push(data.fileName);
+    }
+    
+    // Verify files are accessible
+    for (const fileName of uploadedFiles) {
+      const response = await request.get(`${AUDIO_BASE_URL}/files/${fileName}`);
+      expect(response.status()).toBe(200);
+    }
+    
+    // Now reset all media files
+    const resetResponse = await request.post(`${AUDIO_BASE_URL}/reset`, {
+      headers: {
+        'Authorization': 'Bearer test-admin-key-123'
+      }
+    });
+    
+    expect(resetResponse.status()).toBe(200);
+    
+    const resetData = await resetResponse.json();
+    expect(resetData.success).toBe(true);
+    expect(resetData.deletedCount).toBeGreaterThan(0);
+    
+    // Verify all files are no longer accessible
+    for (const fileName of uploadedFiles) {
+      const response = await request.get(`${AUDIO_BASE_URL}/files/${fileName}`);
+      expect(response.status()).toBe(404);
+      
+      // Verify waveform data is also gone
+      const waveformResponse = await request.get(`${AUDIO_BASE_URL}/files/${fileName}.dat`);
+      expect(waveformResponse.status()).toBe(404);
+    }
+  });
+
+  test('reset endpoint with no files returns zero count', async ({ request }) => {
+    // Call reset when no files exist
+    const resetResponse = await request.post(`${AUDIO_BASE_URL}/reset`, {
+      headers: {
+        'Authorization': 'Bearer test-admin-key-123'
+      }
+    });
+    
+    expect(resetResponse.status()).toBe(200);
+    
+    const resetData = await resetResponse.json();
+    expect(resetData.success).toBe(true);
+    expect(resetData.deletedCount).toBe(0);
+  });
 });

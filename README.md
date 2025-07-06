@@ -166,6 +166,18 @@ curl http://localhost:4001/files/<fileName>
 curl http://localhost:4001/files/<fileName>.dat
 ```
 
+### Reset All Media Files
+**⚠️ WARNING: This will permanently delete ALL stored media files and waveform data!**
+
+```sh
+curl -X POST http://localhost:4001/reset \
+  -H "Authorization: Bearer <ADMIN_API_KEY>"
+```
+- Requires admin API key authorization
+- Deletes all files in the filestore directory
+- Returns success status and count of deleted files
+- This endpoint is typically called by the admin service reset endpoint
+
 ---
 
 ## Admin Microservice API
@@ -213,6 +225,17 @@ curl -X POST http://localhost:4002/admin/users/2/apikeys \
 curl -X POST http://localhost:4002/admin/apikeys/1/revoke \
   -H "Authorization: Bearer <ADMIN_API_KEY>"
 ```
+
+### Reset Complete Application State
+**⚠️ WARNING: This will permanently delete ALL data including users, bands, projects, media, and comments!**
+
+```sh
+curl -X POST http://localhost:4002/admin/reset \
+  -H "Authorization: Bearer <ADMIN_API_KEY>"
+```
+- Deletes all database records (users, bands, projects, media, comments, sessions, API keys)
+- Calls the audio service reset endpoint to delete all stored media files
+- Returns success status and count of deleted audio files
 
 ---
 
@@ -277,16 +300,18 @@ curl -X POST http://localhost:4002/admin/apikeys/1/revoke \
     -d '{"text":"Great comment!","time":42.5}'
   ```
 
-### Audio Proxy Endpoints
+### Media File Proxy Endpoints
 
-- **Download Audio File**
+- **Download Media File**
   ```sh
-  curl http://localhost:3000/api/project/1/media/audio?file=<fileName>
+  curl "http://localhost:3000/api/project/1/media/file?file=<fileName>&type=file"
   ```
 - **Download Waveform Data**
   ```sh
-  curl http://localhost:3000/api/project/1/media/waveform?file=<fileName>
+  curl "http://localhost:3000/api/project/1/media/file?file=<fileName>&type=waveform"
   ```
+- Automatically sets proper MIME types based on file extension (video/mp4, audio/mpeg, etc.)
+- Supports all media types: audio, video, and waveform data
 
 ---
 

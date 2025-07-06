@@ -79,7 +79,42 @@ app.delete('/delete-media', async (req: Request, res: Response) => {
   }
 });
 
-// Serve static files (audio and waveform data)
+// Reset endpoint to delete all stored media
+app.post('/reset', async (req: Request, res: Response) => {
+  // Check for admin API key authorization
+  const auth = req.header('Authorization');
+  const adminApiKey = process.env.ADMIN_API_KEY;
+  
+  if (!adminApiKey) {
+    res.status(500).json({ error: 'Admin API key not configured' });
+    return;
+  }
+  
+  if (!auth || auth !== `Bearer ${adminApiKey}`) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    console.log('Resetting all media files in', FILESTORE_PATH);
+    const files = await fs.readdir(FILESTORE_PATH);
+    const deletePromises = files.map(file => {
+      const filePath = path.join(FILESTORE_PATH, file);
+      return fs.unlink(filePath);
+    });
+    await Promise.all(deletePromises);
+    res.json({ success: true, deletedCount: files.length });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes('ENOENT')) {
+      res.json({ success: true, deletedCount: 0, message: 'No files to delete' });
+    } else {
+      console.log('Failed to reset media files! ', err instanceof Error ? err.message : String(err));
+      res.status(500).json({ error: 'Failed to reset media files', details: err instanceof Error ? err.message : String(err) });
+    }
+  }
+});
+
+// Serve static files
 app.get('/files/:fileName', (req: Request, res: Response) => {
   const { fileName } = req.params;
   const filePath = path.join(FILESTORE_PATH, fileName);

@@ -155,4 +155,54 @@ router.post(
   }
 );
 
+// Reset complete application state
+router.post(
+  '/reset',
+  async (req: express.Request, res: express.Response) => {
+    console.log('Resetting complete application state');
+    try {
+      // Clear all database tables
+      console.log('Resetting complete database');
+      await prisma.comment.deleteMany();
+      await prisma.media.deleteMany();
+      await prisma.project.deleteMany();
+      await prisma.userBand.deleteMany();
+      await prisma.apiKey.deleteMany();
+      await prisma.session.deleteMany();
+      await prisma.user.deleteMany();
+      await prisma.band.deleteMany();
+
+      // Call audio service reset endpoint
+      console.log('Deleting all media files');
+      const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+      const adminApiKey = process.env.ADMIN_API_KEY;
+      const response = await fetch(`${audioServiceUrl}/reset`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminApiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Audio service reset failed: ${response.statusText}`);
+      }
+
+      const audioResetResult = await response.json();
+      
+      res.json({ 
+        success: true, 
+        message: 'Application state reset successfully',
+        audioFiles: audioResetResult.deletedCount !== undefined ? audioResetResult.deletedCount : 0
+      });
+    } catch (err: unknown) {
+      console.error('Reset failed:', err);
+      res.status(500).json({ 
+        error: 'Failed to reset application state', 
+        details: err instanceof Error ? err.message : String(err) 
+      });
+    }
+  }
+);
+
 export default router; 

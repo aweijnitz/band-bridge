@@ -12,7 +12,7 @@
     "test:api": "jest --testPathPattern=tests/api",
     "test:ui": "jest --testPathPattern=tests/ui",
     "test:coverage": "jest --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config=playwright.microservices.config.ts --trace on",
     "test:e2e:microservices": "playwright test --config=playwright.microservices.config.ts",
     "test:e2e:microservices:manual": "./scripts/run-e2e-microservices.sh",
     "reset": "npx prisma migrate reset --force && rm -rf public/filestore/*",

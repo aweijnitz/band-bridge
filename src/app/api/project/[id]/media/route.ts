@@ -14,31 +14,7 @@ const prisma = new PrismaClient();
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const url = new URL(req.url);
-  const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-  // If requesting a file or waveform, proxy to audio service
-  if (url.pathname.endsWith('/audio') && req.nextUrl.searchParams.has('file')) {
-    const fileName = req.nextUrl.searchParams.get('file');
-    const fileRes = await fetch(`${audioServiceUrl}/files/${fileName}`);
-    if (!fileRes.ok) {
-      return new NextResponse('File not found', { status: 404 });
-    }
-    const headers = Object.fromEntries(fileRes.headers.entries());
-    // Stream the response body directly
-    // @ts-expect-error: Next.js Response supports ReadableStream in edge runtime
-    return new NextResponse(fileRes.body as ReadableStream<Uint8Array>, { status: 200, headers });
-  }
-  if (url.pathname.endsWith('/waveform') && req.nextUrl.searchParams.has('file')) {
-    const fileName = req.nextUrl.searchParams.get('file');
-    const fileRes = await fetch(`${audioServiceUrl}/files/${fileName}.dat`);
-    if (!fileRes.ok) {
-      return new NextResponse('Waveform not found', { status: 404 });
-    }
-    const headers = Object.fromEntries(fileRes.headers.entries());
-    // Stream the response body directly
-    // @ts-expect-error: Next.js Response supports ReadableStream in edge runtime
-    return new NextResponse(fileRes.body as ReadableStream<Uint8Array>, { status: 200, headers });
-  }
+  // File serving is now handled by the /file endpoint
   try {
     const projectId = parseInt(id, 10);
     if (isNaN(projectId)) {

@@ -29,8 +29,8 @@ fi
 # Build Prisma client used by all services
 npm run generate:schema
 
-# Run database migrations
-npx prisma migrate deploy
+# Run database migrations and create tables if needed
+npx prisma db push
 
 # Prepare admin service Prisma files
 npm --prefix src/backend/admin run build:prep
@@ -40,7 +40,7 @@ export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@
 export AUDIO_SERVICE_URL="${AUDIO_SERVICE_URL:-http://localhost:4001}"
 export ADMIN_API_KEY="${ADMIN_API_KEY:-changeme}"
 export MAX_UPLOAD_SIZE="${MAX_UPLOAD_SIZE:-1GB}"
-export FILESTORE_PATH="${FILESTORE_PATH:-./filestore}"
+export FILESTORE_PATH="${FILESTORE_PATH:-$(pwd)/filestore}"
 
 # Start audio microservice with hot reload
 npx nodemon --watch src/backend/audio --ext ts \
