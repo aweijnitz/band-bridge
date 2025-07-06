@@ -16,8 +16,8 @@
     "test:e2e:microservices": "playwright test --config=playwright.microservices.config.ts",
     "test:e2e:microservices:manual": "./scripts/run-e2e-microservices.sh",
     "reset": "npx prisma migrate reset --force && rm -rf public/filestore/*",
-    "start:audio-service": "npm start --prefix src/backend/audio",
-    "build:audio-service": "npm run build --prefix src/backend/audio"
+    "start:media-service": "npm start --prefix src/backend/media",
+    "build:media-service": "npm run build --prefix src/backend/media"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",

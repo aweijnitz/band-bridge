@@ -15,11 +15,11 @@ const prisma = new PrismaClient();
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const url = new URL(req.url);
-  const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-  // If requesting a file or waveform, proxy to audio service
+  const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
+  // If requesting a file or waveform, proxy to media service
   if (url.pathname.endsWith('/audio') && req.nextUrl.searchParams.has('file')) {
     const fileName = req.nextUrl.searchParams.get('file');
-    const fileRes = await fetch(`${audioServiceUrl}/files/${fileName}`);
+    const fileRes = await fetch(`${mediaServiceUrl}/files/${fileName}`);
     if (!fileRes.ok) {
       return new NextResponse('File not found', { status: 404 });
     }
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
   if (url.pathname.endsWith('/waveform') && req.nextUrl.searchParams.has('file')) {
     const fileName = req.nextUrl.searchParams.get('file');
-    const fileRes = await fetch(`${audioServiceUrl}/files/${fileName}.dat`);
+    const fileRes = await fetch(`${mediaServiceUrl}/files/${fileName}.dat`);
     if (!fileRes.ok) {
       return new NextResponse('Waveform not found', { status: 404 });
     }
@@ -80,16 +80,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       filename: file.name,
       contentType: file.type || 'application/octet-stream',
     });
-    const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-    const uploadRes = await fetch(`${audioServiceUrl}/upload`, {
+    const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
+    const uploadRes = await fetch(`${mediaServiceUrl}/upload`, {
       method: 'POST',
       body: uploadForm as unknown as FormData,
       headers: (uploadForm as unknown as { getHeaders?: () => Record<string, string> }).getHeaders ? (uploadForm as unknown as { getHeaders: () => Record<string, string> }).getHeaders() : {},
     });
     if (!uploadRes.ok) {
       const err = await uploadRes.json().catch(() => ({}));
-      console.error('[Media Upload] Audio service upload failed', err);
-      return NextResponse.json({ error: 'Audio service upload failed', details: err.error || uploadRes.statusText }, { status: 500 });
+      console.error('[Media Upload] Media service upload failed', err);
+      return NextResponse.json({ error: 'Media service upload failed', details: err.error || uploadRes.statusText }, { status: 500 });
     }
     const { fileName } = await uploadRes.json();
     // Use file name (without extension) as title if not provided

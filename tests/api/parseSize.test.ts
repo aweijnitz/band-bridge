@@ -1,4 +1,4 @@
-import { parseSize } from '../../src/backend/audio/parseSize';
+import { parseSize } from '../../src/backend/media/parseSize';
 
 describe('parseSize', () => {
   it('parses gigabytes', () => {

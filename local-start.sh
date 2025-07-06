@@ -16,7 +16,7 @@ npm run build
 
 # Default environment variables
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/bandbridge}"
-export AUDIO_SERVICE_URL="${AUDIO_SERVICE_URL:-http://localhost:4001}"
+export MEDIA_SERVICE_URL="${MEDIA_SERVICE_URL:-http://localhost:4001}"
 export ADMIN_API_KEY="${ADMIN_API_KEY:-changeme}"
 export MAX_UPLOAD_SIZE="${MAX_UPLOAD_SIZE:-1GB}"
 

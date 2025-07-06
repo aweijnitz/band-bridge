@@ -36,7 +36,7 @@ function getMimeType(fileName: string): string {
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await params;
-  const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+  const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
   
   // Get the file parameter from the query string
   const fileName = req.nextUrl.searchParams.get('file');
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       targetFile = fileName.endsWith('.dat') ? fileName : `${fileName}.dat`;
     }
     
-    // Proxy the file request to the audio service
-    const fileRes = await fetch(`${audioServiceUrl}/files/${targetFile}`);
+    // Proxy the file request to the media service
+    const fileRes = await fetch(`${mediaServiceUrl}/files/${targetFile}`);
     
     if (!fileRes.ok) {
       console.error(`File not found: ${targetFile}`);
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const responseHeaders = new Headers();
     responseHeaders.set('Content-Type', contentType);
     
-    // Copy other relevant headers from the audio service response
+    // Copy other relevant headers from the media service response
     const transferHeaders = ['content-length', 'last-modified', 'etag'];
     transferHeaders.forEach(headerName => {
       const value = fileRes.headers.get(headerName);

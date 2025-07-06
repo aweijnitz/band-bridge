@@ -272,7 +272,7 @@ test.describe('Admin Server E2E Tests', () => {
     const resetData = await resetResponse.json();
     expect(resetData.success).toBe(true);
     expect(resetData.message).toBe('Application state reset successfully');
-    expect(resetData.audioFiles).toBeDefined();
+    expect(resetData.mediaFiles).toBeDefined();
     
     // Verify that trying to create user with same username works (meaning old data is gone)
     const newUserResponse = await request.post(`${ADMIN_BASE_URL}/admin/users`, {

@@ -99,7 +99,7 @@ wait_for_service() {
 
 # Wait for all services to be healthy
 wait_for_service "test-db"
-wait_for_service "test-audio"
+wait_for_service "test-media"
 wait_for_service "test-admin"
 
 # Run database migrations for the admin service

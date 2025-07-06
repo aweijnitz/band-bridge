@@ -8,14 +8,14 @@ services:
       POSTGRES_DB: bandbridge
     volumes:
       - db_data:/var/lib/postgresql/data
-  audio:
+  media:
     build:
-      context: ./src/backend/audio
+      context: ./src/backend/media
     restart: always
     depends_on:
       - db
     environment:
-      - AUDIO_SERVICE_PORT=4001
+      - MEDIA_SERVICE_PORT=4001
       - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE}
     volumes:
       - asset_filestore:/assetfilestore
@@ -37,14 +37,14 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - AUDIO_SERVICE_URL=${AUDIO_SERVICE_URL}
+      - MEDIA_SERVICE_URL=${MEDIA_SERVICE_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
     ports:
       - '3000:3000'
     depends_on:
       - db
-      - audio
+      - media
     volumes:
       - ./.env:/app/.env:ro
 volumes:

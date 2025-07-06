@@ -7,7 +7,7 @@ test('web app responds', async ({ request }) => {
   expect(OK_OR_REDIRECT).toContain(response.status());
 });
 
-test('audio service health', async ({ request }) => {
+test('media service health', async ({ request }) => {
   const response = await request.get('http://localhost:4001/health');
   expect(response.status()).toBe(200);
 });

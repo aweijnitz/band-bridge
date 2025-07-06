@@ -45,7 +45,7 @@ docker-compose -f docker-compose.test.yml down --volumes --remove-orphans
 The tests use isolated Docker containers:
 
 - **test-db**: PostgreSQL database (port 5433)
-- **test-audio**: Audio microservice (port 4001)
+- **test-media**: Media microservice (port 4001)
 - **test-admin**: Admin microservice (port 4002)
 
 ## Test Coverage
@@ -89,7 +89,7 @@ The tests use `test-data/120bpm-test-track.wav` for file upload testing.
 2. **Port conflicts**: Check that ports 4001, 4002, and 5433 are available
 3. **Services not healthy**: Check service logs with `docker-compose -f docker-compose.test.yml logs [service-name]`
 4. **Migration failures**: Ensure database is running and accessible
-5. **File upload failures**: Check that the audio service has proper file permissions
+5. **File upload failures**: Check that the media service has proper file permissions
 
 ## Architecture Notes
 

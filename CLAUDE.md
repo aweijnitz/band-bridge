@@ -24,8 +24,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run reset` - Reset database and clear filestore (destructive)
 
 ### Microservices
-- `npm run start:audio-service` - Start audio service independently
-- `npm run build:audio-service` - Build audio service
+- `npm run start:media-service` - Start media service independently
+- `npm run build:media-service` - Build media service
 
 ## Architecture Overview
 
@@ -33,7 +33,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 
 ### Core Services
 1. **Next.js App** (`src/app/`) - Main web application with API routes
-2. **Audio Microservice** (`src/backend/audio/`) - Handles media uploads and waveform generation
+2. **Media Microservice** (`src/backend/media/`) - Handles media uploads and waveform generation
 3. **Admin Microservice** (`src/backend/admin/`) - User and band management
 
 ### Database Schema
@@ -58,7 +58,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 - RESTful API routes in `src/app/api/`
 - Nested routes for projects and media: `/api/project/[id]/media/[mediaId]`
 - Authentication middleware protects most routes
-- File operations proxied through Next.js to audio microservice
+- File operations proxied through Next.js to media microservice
 
 ### Authentication
 - Session-based auth with database-stored sessions
@@ -67,7 +67,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 - Session validation in `src/app/api/auth/session.ts`
 
 ### Media Handling
-- Audio microservice handles file uploads and processing
+- Media microservice handles file uploads and processing
 - Waveform generation using `audiowaveform` for `.dat` files
 - Files stored in Docker volume at `/assetfilestore`
 - Media types: audio (MP3/WAV), video (MP4/MOV/AVI/H.264)
@@ -98,7 +98,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 
 The application runs in a multi-container setup:
 - Main app container (Next.js)
-- Audio service container (Express + audiowaveform)
+- Media service container (Express + audiowaveform)
 - Admin service container (Express + Prisma)
 - PostgreSQL database container
 - Shared volume for file storage
@@ -108,13 +108,13 @@ The application runs in a multi-container setup:
 Key environment variables:
 - `DATABASE_URL` - PostgreSQL connection string
 - `ADMIN_API_KEY` - Static API key for admin service
-- `AUDIO_SERVICE_URL` - Internal URL for audio service
+- `MEDIA_SERVICE_URL` - Internal URL for media service
 - `MAX_UPLOAD_SIZE` - File upload limit (default: 1GB)
 - `NEXT_PUBLIC_BAND_NAME` - Band name displayed in UI
 
 ## Important Notes
 
-- All file operations go through the audio microservice
+- All file operations go through the media microservice
 - Waveform data is pre-computed on upload for performance
 - Deep linking supports sharing media with timestamps
 - API routes require session authentication except for public paths

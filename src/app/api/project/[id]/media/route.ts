@@ -56,8 +56,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       filename: file.name,
       contentType: file.type || 'application/octet-stream',
     });
-    const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-    const uploadRes = await fetch(`${audioServiceUrl}/upload`, {
+    const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
+    const uploadRes = await fetch(`${mediaServiceUrl}/upload`, {
       method: 'POST',
       body: uploadForm as unknown as FormData,
       headers: (uploadForm as unknown as { getHeaders?: () => Record<string, string> }).getHeaders ? (uploadForm as unknown as { getHeaders: () => Record<string, string> }).getHeaders() : {},

@@ -172,11 +172,11 @@ router.post(
       await prisma.user.deleteMany();
       await prisma.band.deleteMany();
 
-      // Call audio service reset endpoint
+      // Call media service reset endpoint
       console.log('Deleting all media files');
-      const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
+      const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
       const adminApiKey = process.env.ADMIN_API_KEY;
-      const response = await fetch(`${audioServiceUrl}/reset`, {
+      const response = await fetch(`${mediaServiceUrl}/reset`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -185,15 +185,15 @@ router.post(
       });
 
       if (!response.ok) {
-        throw new Error(`Audio service reset failed: ${response.statusText}`);
+        throw new Error(`Media service reset failed: ${response.statusText}`);
       }
 
-      const audioResetResult = await response.json();
+      const mediaResetResult = await response.json();
       
       res.json({ 
         success: true, 
         message: 'Application state reset successfully',
-        audioFiles: audioResetResult.deletedCount !== undefined ? audioResetResult.deletedCount : 0
+        mediaFiles: mediaResetResult.deletedCount !== undefined ? mediaResetResult.deletedCount : 0
       });
     } catch (err: unknown) {
       console.error('Reset failed:', err);

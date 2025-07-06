@@ -21,14 +21,14 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:testpass@test-db:5432/bandbridge_test
-      - AUDIO_SERVICE_URL=http://test-audio:4001
+      - MEDIA_SERVICE_URL=http://test-media:4001
       - ADMIN_API_KEY=test-admin-key-123
       - NEXT_PUBLIC_BAND_NAME=Test Band
       - JWT_SECRET=test-jwt-secret
     depends_on:
       test-db:
         condition: service_healthy
-      test-audio:
+      test-media:
         condition: service_healthy
       test-admin:
         condition: service_healthy
@@ -40,13 +40,13 @@ services:
       timeout: 5s
       retries: 5
   
-  test-audio:
+  test-media:
     build:
-      context: ./src/backend/audio
+      context: ./src/backend/media
     ports:
       - "4001:4001"
     environment:
-      - AUDIO_SERVICE_PORT=4001
+      - MEDIA_SERVICE_PORT=4001
       - MAX_UPLOAD_SIZE=1GB
       - ADMIN_API_KEY=test-admin-key-123
     volumes:

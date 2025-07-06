@@ -25,7 +25,7 @@ async function globalSetup(config: FullConfig) {
         const { stdout } = await execAsync('docker compose -f docker-compose.test.yml ps');
         if (stdout.includes('healthy')) {
           const healthyServices = (stdout.match(/healthy/g) || []).length;
-          if (healthyServices >= 4) { // db, audio, admin, app
+          if (healthyServices >= 4) { // db, media, admin, app
             console.log('✅ All services are healthy');
             break;
           }

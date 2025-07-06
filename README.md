@@ -76,7 +76,7 @@ A web app for band collaboration: create projects, upload media, and comment on 
    - This will start:
      - The Next.js webapp
      - The Postgres database
-     - The audio microservice (Express, with audiowaveform and ffmpeg)
+     - The media microservice (Express, with audiowaveform and ffmpeg)
      - The admin microservice (Express, Prisma)
 
 4. **Stop all services:**
@@ -100,7 +100,7 @@ band-bridge/
 ├── src/
 │   ├── app/                # Next.js frontend & API routes
 │   └── backend/
-│       ├── audio/          # Audio microservice (Express, waveform pre-compute)
+│       ├── audio/          # Media microservice (Express, waveform pre-compute)
 │       └── admin/          # Admin microservice (Express, Prisma)
 ├── public/
 │   └── (static assets only)
@@ -110,11 +110,11 @@ band-bridge/
 └── README.md
 ```
 
-**Audio Microservice:**
+**Media Microservice:**
   - Located at `src/backend/audio/`
-  - Handles audio file uploads, deletions, and waveform pre-computation using [BBC audiowaveform](https://github.com/bbc/audiowaveform).
-  - All audio and waveform files are stored in a Docker volume mounted at `/assetfilestore` inside the audio microservice container. This volume is not directly accessible from the host or the Next.js app.
-  - Waveform data is saved as `.dat` files next to the audio files (e.g., `media.wav` → `media.wav.dat`).
+  - Handles media file uploads, deletions, and waveform pre-computation using [BBC audiowaveform](https://github.com/bbc/audiowaveform).
+  - All media and waveform files are stored in a Docker volume mounted at `/assetfilestore` inside the media microservice container. This volume is not directly accessible from the host or the Next.js app.
+  - Waveform data is saved as `.dat` files next to the media files (e.g., `media.wav` → `media.wav.dat`).
 
 - **Admin Microservice:**
   - Located at `src/backend/admin/`
@@ -138,7 +138,7 @@ Every media item has a unique URL (`/project/[projectId]/media/[mediaId]`). Use 
 
 ---
 
-## Audio Microservice API
+## Media Microservice API
 
 ### Health Check
 ```sh
@@ -234,8 +234,8 @@ curl -X POST http://localhost:4002/admin/reset \
   -H "Authorization: Bearer <ADMIN_API_KEY>"
 ```
 - Deletes all database records (users, bands, projects, media, comments, sessions, API keys)
-- Calls the audio service reset endpoint to delete all stored media files
-- Returns success status and count of deleted audio files
+- Calls the media service reset endpoint to delete all stored media files
+- Returns success status and count of deleted media files
 
 ---
 
@@ -317,15 +317,15 @@ curl -X POST http://localhost:4002/admin/reset \
 
 ## API Proxying
 
-All audio and waveform file requests from the frontend are proxied through the Next.js API, which streams data from the audio microservice. The frontend does not access the file storage directly.
+All media and waveform file requests from the frontend are proxied through the Next.js API, which streams data from the media microservice. The frontend does not access the file storage directly.
 
 ---
 
 ## Environment Variables
 - `NEXT_PUBLIC_BAND_NAME`: The band name shown in the UI.
-- `AUDIO_SERVICE_PORT`: Port for the audio microservice (default: 4001, internal only).
-- `AUDIO_SERVICE_URL`: URL for the audio microservice (used by the Next.js API to proxy requests).
-- `MAX_UPLOAD_SIZE`: Maximum allowed file upload size for the audio microservice. Accepts human readable values like `1GB`, `500MB`, `0.5GB` (default: `1GB`).
+- `MEDIA_SERVICE_PORT`: Port for the media microservice (default: 4001, internal only).
+- `MEDIA_SERVICE_URL`: URL for the media microservice (used by the Next.js API to proxy requests).
+- `MAX_UPLOAD_SIZE`: Maximum allowed file upload size for the media microservice. Accepts human readable values like `1GB`, `500MB`, `0.5GB` (default: `1GB`).
 - `ADMIN_API_KEY`: Static API key for admin microservice.
 - `DATABASE_URL`: Postgres connection string for all services.
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`: For NextAuth.js (if used).
@@ -333,8 +333,8 @@ All audio and waveform file requests from the frontend are proxied through the N
 ---
 
 ## Notes
-- **Waveform Pre-Compute:** On upload, the audio microservice runs `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
-- **File Storage:** All audio and waveform files are stored in a Docker volume at `/assetfilestore` inside the audio microservice. They are not accessible from the Next.js app or the host filesystem.
+- **Waveform Pre-Compute:** On upload, the media microservice runs `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
+- **File Storage:** All media and waveform files are stored in a Docker volume at `/assetfilestore` inside the media microservice. They are not accessible from the Next.js app or the host filesystem.
 - **Tests:** Run `npm test` to execute all API and UI tests.
 - **E2E Tests:** Run `npm run test:e2e` to execute the Playwright end-to-end suite.
 

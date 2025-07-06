@@ -85,19 +85,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     // Find all media for the project
     const media = await prisma.media.findMany({ where: { projectId: idNr } });
-    const audioServiceUrl = process.env.AUDIO_SERVICE_URL || 'http://localhost:4001';
-    // Delete all media files via audio microservice
+    const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
+    // Delete all media files via media microservice
     for (const mediaItem of media) {
       if (mediaItem.filePath) {
         try {
-          await fetch(`${audioServiceUrl}/delete-media`, {
+          await fetch(`${mediaServiceUrl}/delete-media`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileName: mediaItem.filePath }),
           });
         } catch (err) {
           // Log and continue
-          console.error('Failed to delete media file via audio service', mediaItem.filePath, err);
+          console.error('Failed to delete media file via media service', mediaItem.filePath, err);
         }
       }
     }

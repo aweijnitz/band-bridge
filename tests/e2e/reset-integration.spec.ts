@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ADMIN_BASE_URL = 'http://localhost:4002';
-const AUDIO_BASE_URL = 'http://localhost:4001';
+const MEDIA_BASE_URL = 'http://localhost:4001';
 const ADMIN_API_KEY = 'test-admin-key-123';
 const TEST_AUDIO_FILE = path.join(__dirname, '../../test-data/120bpm-test-track.wav');
 
@@ -53,7 +53,7 @@ test.describe('Reset Integration Tests', () => {
     const uploadedFiles: string[] = [];
     
     for (let i = 0; i < 2; i++) {
-      const response = await request.post(`${AUDIO_BASE_URL}/upload`, {
+      const response = await request.post(`${MEDIA_BASE_URL}/upload`, {
         multipart: {
           file: {
             name: `integration-test-${i}.wav`,
@@ -70,7 +70,7 @@ test.describe('Reset Integration Tests', () => {
     
     // Step 3: Verify files are accessible
     for (const fileName of uploadedFiles) {
-      const response = await request.get(`${AUDIO_BASE_URL}/files/${fileName}`);
+      const response = await request.get(`${MEDIA_BASE_URL}/files/${fileName}`);
       expect(response.status()).toBe(200);
     }
     
@@ -84,9 +84,9 @@ test.describe('Reset Integration Tests', () => {
     const resetData = await resetResponse.json();
     expect(resetData.success).toBe(true);
     expect(resetData.message).toBe('Application state reset successfully');
-    expect(resetData.audioFiles).toBeDefined();
-    expect(resetData.audioFiles.success).toBe(true);
-    expect(resetData.audioFiles.deletedCount).toBeGreaterThan(0);
+    expect(resetData.mediaFiles).toBeDefined();
+    expect(resetData.mediaFiles.success).toBe(true);
+    expect(resetData.mediaFiles.deletedCount).toBeGreaterThan(0);
     
     // Step 5: Verify database is cleared - can create user/band with same names
     const newUserResponse = await request.post(`${ADMIN_BASE_URL}/admin/users`, {
@@ -108,16 +108,16 @@ test.describe('Reset Integration Tests', () => {
     
     // Step 6: Verify media files are gone
     for (const fileName of uploadedFiles) {
-      const response = await request.get(`${AUDIO_BASE_URL}/files/${fileName}`);
+      const response = await request.get(`${MEDIA_BASE_URL}/files/${fileName}`);
       expect(response.status()).toBe(404);
       
       // Verify waveform data is also gone
-      const waveformResponse = await request.get(`${AUDIO_BASE_URL}/files/${fileName}.dat`);
+      const waveformResponse = await request.get(`${MEDIA_BASE_URL}/files/${fileName}.dat`);
       expect(waveformResponse.status()).toBe(404);
     }
   });
 
-  test('reset handles audio service unavailable gracefully', async ({ request }) => {
+  test('reset handles media service unavailable gracefully', async ({ request }) => {
     // Create some database data first
     const userResponse = await request.post(`${ADMIN_BASE_URL}/admin/users`, {
       headers: adminHeaders,
@@ -128,15 +128,15 @@ test.describe('Reset Integration Tests', () => {
     });
     expect(userResponse.status()).toBe(201);
     
-    // Mock audio service failure by using wrong URL
-    // This test assumes we can't easily mock the audio service being down
-    // In a real scenario, you might want to temporarily stop the audio service
-    // For now, we'll just verify the reset works when audio service is available
+    // Mock media service failure by using wrong URL
+    // This test assumes we can't easily mock the media service being down
+    // In a real scenario, you might want to temporarily stop the media service
+    // For now, we'll just verify the reset works when media service is available
     const resetResponse = await request.post(`${ADMIN_BASE_URL}/admin/reset`, {
       headers: adminHeaders
     });
     
-    // Should still succeed because audio service is actually running
+    // Should still succeed because media service is actually running
     expect(resetResponse.status()).toBe(200);
     
     const resetData = await resetResponse.json();
@@ -156,7 +156,7 @@ test.describe('Reset Integration Tests', () => {
     
     // Upload a file
     const fileBuffer = fs.readFileSync(TEST_AUDIO_FILE);
-    const uploadResponse = await request.post(`${AUDIO_BASE_URL}/upload`, {
+    const uploadResponse = await request.post(`${MEDIA_BASE_URL}/upload`, {
       multipart: {
         file: {
           name: 'idempotent-test.wav',
@@ -184,6 +184,6 @@ test.describe('Reset Integration Tests', () => {
     
     const secondResetData = await secondResetResponse.json();
     expect(secondResetData.success).toBe(true);
-    expect(secondResetData.audioFiles.deletedCount).toBe(0); // No files to delete
+    expect(secondResetData.mediaFiles.deletedCount).toBe(0); // No files to delete
   });
 });

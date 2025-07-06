@@ -19,34 +19,34 @@ export async function register() {
     await client.end();
   }
 
-  // Audio service connectivity check (non-blocking)
-  const audioServiceUrl = process.env.AUDIO_SERVICE_URL;
-  if (!audioServiceUrl) {
-    console.error('❌ AUDIO_SERVICE_URL environment variable is not set.');
+  // Media service connectivity check (non-blocking)
+  const mediaServiceUrl = process.env.MEDIA_SERVICE_URL;
+  if (!mediaServiceUrl) {
+    console.error('❌ MEDIA_SERVICE_URL environment variable is not set.');
     return;
   }
   
-  // Check audio service availability with timeout and retry
-  const checkAudioService = async (retries = 3) => {
+  // Check media service availability with timeout and retry
+  const checkMediaService = async (retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
         
-        const res = await fetch(`${audioServiceUrl}/health`, {
+        const res = await fetch(`${mediaServiceUrl}/health`, {
           signal: controller.signal
         });
         clearTimeout(timeoutId);
         
         if (res.ok) {
-          console.log('✅ Audio service connection successful');
+          console.log('✅ Media service connection successful');
           return;
         } else {
-          console.error(`❌ Audio service health check failed: HTTP ${res.status}`);
+          console.error(`❌ Media service health check failed: HTTP ${res.status}`);
         }
       } catch {
         if (i === retries - 1) {
-          console.log('⚠️  Audio service not ready yet (this is normal during startup)');
+          console.log('⚠️  Media service not ready yet (this is normal during startup)');
         } else {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
         }
@@ -54,8 +54,8 @@ export async function register() {
     }
   };
   
-  // Run audio service check in background without blocking startup
-  checkAudioService().catch(() => {
-    console.log('⚠️  Audio service will be checked again when needed');
+  // Run media service check in background without blocking startup
+  checkMediaService().catch(() => {
+    console.log('⚠️  Media service will be checked again when needed');
   });
 } 

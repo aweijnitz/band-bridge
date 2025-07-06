@@ -37,15 +37,15 @@ npm --prefix src/backend/admin run build:prep
 
 # Default environment variables for local dev
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/bandbridge}"
-export AUDIO_SERVICE_URL="${AUDIO_SERVICE_URL:-http://localhost:4001}"
+export MEDIA_SERVICE_URL="${MEDIA_SERVICE_URL:-http://localhost:4001}"
 export ADMIN_API_KEY="${ADMIN_API_KEY:-changeme}"
 export MAX_UPLOAD_SIZE="${MAX_UPLOAD_SIZE:-1GB}"
 export FILESTORE_PATH="${FILESTORE_PATH:-$(pwd)/filestore}"
 
-# Start audio microservice with hot reload
-npx nodemon --watch src/backend/audio --ext ts \
-  --exec "npm --silent --prefix src/backend/audio run build && node src/backend/audio/dist/index.js" &
-audio_pid=$!
+# Start media microservice with hot reload
+npx nodemon --watch src/backend/media --ext ts \
+  --exec "npm --silent --prefix src/backend/media run build && node src/backend/media/dist/index.js" &
+media_pid=$!
 
 # Start admin microservice with hot reload
 npx nodemon --watch src/backend/admin/src --ext ts \
@@ -149,7 +149,7 @@ create_test_data &
 
 cleanup() {
   echo "Stopping..."
-  kill $audio_pid $admin_pid $web_pid 2>/dev/null || true
+  kill $media_pid $admin_pid $web_pid 2>/dev/null || true
   docker rm -f ${PG_CONTAINER_NAME} >/dev/null 2>&1 || true
 }
 

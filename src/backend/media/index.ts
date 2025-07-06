@@ -6,7 +6,7 @@ import { execFile } from 'child_process';
 import { parseSize } from './parseSize';
 
 const app = express();
-const PORT = process.env.AUDIO_SERVICE_PORT || 4001;
+const PORT = process.env.MEDIA_SERVICE_PORT || 4001;
 const FILESTORE_PATH = process.env.FILESTORE_PATH || '/assetfilestore'; // Mapped to volume in docker-compose.yml
 const MAX_UPLOAD_SIZE = parseSize(process.env.MAX_UPLOAD_SIZE || '1GB');
 
@@ -20,7 +20,7 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  console.log('Audio Service Health check');
+  console.log('Media Service Health check');
   res.json({ status: 'ok' });
 });
 
@@ -154,7 +154,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Audio microservice listening on port ${PORT}`);
+    console.log(`Media microservice listening on port ${PORT}`);
   });
 }
 
