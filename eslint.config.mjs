@@ -17,6 +17,7 @@ const eslintConfig = [
       "./src/backend/admin/generated",
       "./src/backend/admin/dist",
       "./src/backend/audio/dist",
+      "./src/backend/media/dist",
       "./dist"
     ],
   },
