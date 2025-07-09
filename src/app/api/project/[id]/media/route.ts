@@ -6,6 +6,11 @@ import { requireSession } from '../../../auth/requireSession';
 
 const prisma = new PrismaClient();
 
+// Configure the route to accept large files (1GB)
+export const maxDuration = 60; // seconds
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 /**
  * Get all media items for a project
  * @param req - The request object
@@ -40,40 +45,69 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await requireSession(req);
   try {
     const { id: idStr } = await params;
-    const formData = await req.formData();
+    const projectId = parseInt(idStr, 10);
+    if (isNaN(projectId)) {
+      console.warn('[Media Upload] Invalid project id', { projectId });
+      return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
+    }
+
+    // Check Content-Length to enforce size limit
+    const contentLength = req.headers.get('content-length');
+    const MAX_SIZE = 1024 * 1024 * 1024; // 1GB
+    if (contentLength && parseInt(contentLength) > MAX_SIZE) {
+      return NextResponse.json({ error: 'File too large' }, { status: 413 });
+    }
+
+    // Parse form data with size limit handling
+    let formData;
+    try {
+      formData = await req.formData();
+    } catch (error) {
+      console.error('[Media Upload] Form data parsing failed', error);
+      return NextResponse.json({ error: 'File too large or invalid form data' }, { status: 413 });
+    }
+
     const file = formData.get('file') as File | null;
     let title = formData.get('title') as string | null;
-    const projectId = parseInt(idStr, 10);
-    if (!file || isNaN(projectId)) {
-      console.warn('[Media Upload] Missing file or invalid project id', { file, projectId });
-      return NextResponse.json({ error: 'Missing file or invalid project id', details: { file: !!file, projectId } }, { status: 400 });
+    
+    if (!file) {
+      console.warn('[Media Upload] Missing file');
+      return NextResponse.json({ error: 'Missing file' }, { status: 400 });
     }
+
     // Convert web File to Node.js Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    
     const uploadForm = new FormData();
     uploadForm.append('file', buffer, {
       filename: file.name,
       contentType: file.type || 'application/octet-stream',
     });
+    
     const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || 'http://localhost:4001';
     const uploadRes = await fetch(`${mediaServiceUrl}/upload`, {
       method: 'POST',
       body: uploadForm as unknown as FormData,
       headers: (uploadForm as unknown as { getHeaders?: () => Record<string, string> }).getHeaders ? (uploadForm as unknown as { getHeaders: () => Record<string, string> }).getHeaders() : {},
     });
+    
     if (!uploadRes.ok) {
       const err = await uploadRes.json().catch(() => ({}));
       console.error('[Media Upload] Media service upload failed', err);
       return NextResponse.json({ error: 'Media service upload failed', details: err.error || uploadRes.statusText }, { status: 500 });
     }
+    
     const { fileName } = await uploadRes.json();
+    
     // Use file name (without extension) as title if not provided
     if (!title) {
       title = file.name.replace(/\.[^/.]+$/, '');
     }
+    
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const type: 'audio' | 'video' | 'image' = ['mp3','wav'].includes(extension) ? 'audio' : ['mp4','mov','avi','h264','m4v'].includes(extension) ? 'video' : 'image';
+    
     try {
       const media = await prisma.media.create({
         data: {
