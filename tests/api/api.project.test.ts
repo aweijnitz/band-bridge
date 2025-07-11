@@ -1,5 +1,18 @@
 import { POST } from '../../src/app/api/project/route';
 
+// Mock requireSession
+jest.mock('../../src/app/api/auth/requireSession', () => ({
+  requireSession: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock text validation
+jest.mock('../../src/lib/textValidation', () => ({
+  validateDescription: jest.fn().mockImplementation((desc) => ({
+    isValid: true,
+    sanitized: desc,
+  })),
+}));
+
 // Mock PrismaClient to avoid real DB calls
 jest.mock('../../src/generated/prisma', () => {
   return {
@@ -9,6 +22,7 @@ jest.mock('../../src/generated/prisma', () => {
           Promise.resolve({
             id: 1,
             name: data.name,
+            description: data.description,
             bandId: data.bandId,
             ownerId: data.ownerId,
             status: data.status,
@@ -43,6 +57,21 @@ describe('POST /api/project (unit)', () => {
     expect(data.bandId).toBe(1);
     expect(data.ownerId).toBe(1);
     expect(data.status).toBe('open');
+  });
+
+  it('should create a project with description', async () => {
+    const req = mockRequest({
+      name: 'Test Project',
+      description: '<b>Bold</b> description with <a href="http://example.com">link</a>',
+      bandId: 1,
+      ownerId: 1,
+      status: 'open',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.name).toBe('Test Project');
+    expect(data.description).toBe('<b>Bold</b> description with <a href="http://example.com">link</a>');
   });
 
   it('should return 400 for missing fields', async () => {

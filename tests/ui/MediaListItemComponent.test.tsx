@@ -104,40 +104,6 @@ describe("MediaListItemComponent", () => {
     expect(screen.getByText("Great part")).toBeInTheDocument();
   });
 
-  // Skipped due to async state update issues with isLoggedIn and fetch in the component
-  it.skip("calls onCommentInputChange when typing in input", async () => {
-    const originalUseState = React.useState;
-    (jest.spyOn(React, "useState") as any).mockImplementation(
-      (init: any): [any, React.Dispatch<any>] => {
-        if (init === false) {
-          return [true, jest.fn()];
-        }
-        return originalUseState(init);
-      }
-    );
-    await act(async () => {
-      render(
-        <MediaListItemComponent
-          media={mockMedia}
-          comments={mockComments}
-          onAddComment={mockOnAddComment}
-          commentInput=""
-          onCommentInputChange={mockOnCommentInputChange}
-          commentLoading={false}
-          onDeleteMedia={jest.fn()}
-        />
-      );
-      let input: HTMLElement | null = null;
-      await waitFor(() => {
-        input = screen.getByPlaceholderText("Add a comment...");
-        expect(input).toBeInTheDocument();
-      });
-      fireEvent.change(input!, { target: { value: "Hello" } });
-    });
-    expect(mockOnCommentInputChange).toHaveBeenCalled();
-    (React.useState as jest.Mock).mockRestore();
-  });
-
   it("calls onAddComment when Add button is clicked", async () => {
     await act(async () => {
       render(

@@ -11,6 +11,7 @@ type Project = {
   status: ProjectStatus;
   createdAt: string;
   bandId?: number;
+  description?: string;
 };
 
 type ProjectListComponentProps = {

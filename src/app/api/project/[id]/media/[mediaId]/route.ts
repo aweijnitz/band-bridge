@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../../../../auth/requireSession';
+import { validateDescription } from '@/lib/textValidation';
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,52 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json(media);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch media', details: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
+/**
+ * Update a media item (title, description)
+ * @param req - The request object
+ * @param params - The parameters object
+ * @returns A response object
+ */
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string, mediaId: string }> }) {
+  await requireSession(req);
+  try {
+    const { id, mediaId } = await params;
+    const projectId = parseInt(id, 10);
+    const mediaIdNum = parseInt(mediaId, 10);
+    if (isNaN(projectId) || isNaN(mediaIdNum)) {
+      return NextResponse.json({ error: 'Invalid project or media id' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { title, description } = body;
+
+    // Find the media to ensure it exists and belongs to the project
+    const existingMedia = await prisma.media.findUnique({ where: { id: mediaIdNum } });
+    if (!existingMedia || existingMedia.projectId !== projectId) {
+      return NextResponse.json({ error: 'Media not found in project' }, { status: 404 });
+    }
+
+    // Validate description
+    const validation = validateDescription(description);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    // Update media
+    const updatedMedia = await prisma.media.update({
+      where: { id: mediaIdNum },
+      data: {
+        ...(title && { title }),
+        description: validation.sanitized,
+      },
+    });
+
+    return NextResponse.json(updatedMedia);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update media', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 }
 

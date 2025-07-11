@@ -52,15 +52,16 @@ model ApiKey {
 }
 
 model Project {
-  id         Int      @id @default(autoincrement())
-  name       String
-  createdAt  DateTime @default(now())
-  band       Band?    @relation(fields: [bandId], references: [id])
-  bandId     Int?
-  owner      User     @relation("UserProjects", fields: [ownerId], references: [id])
-  ownerId    Int
-  status     ProjectStatus
-  media      Media[]
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  band        Band?    @relation(fields: [bandId], references: [id])
+  bandId      Int?
+  owner       User     @relation("UserProjects", fields: [ownerId], references: [id])
+  ownerId     Int
+  status      ProjectStatus
+  media       Media[]
 }
 
 enum ProjectStatus {
@@ -76,14 +77,15 @@ enum MediaType {
 }
 
 model Media {
-  id         Int      @id @default(autoincrement())
-  project    Project  @relation(fields: [projectId], references: [id])
-  projectId  Int
-  title      String
-  filePath   String
-  type       MediaType
-  uploadDate DateTime @default(now())
-  comments   Comment[]
+  id          Int      @id @default(autoincrement())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   Int
+  title       String
+  description String?
+  filePath    String
+  type        MediaType
+  uploadDate  DateTime @default(now())
+  comments    Comment[]
 }
 
 model Comment {

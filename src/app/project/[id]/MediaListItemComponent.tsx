@@ -30,6 +30,7 @@ interface Media {
   projectId: number;
   filePath: string;
   title: string;
+  description?: string;
   uploadDate: string;
 }
 
@@ -295,6 +296,12 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
         </Link>
       </h2>
       <div className="text-gray-500 text-sm mb-2">Uploaded: {new Date(media.uploadDate).toLocaleString()}</div>
+      {media.description && (
+        <div 
+          className="text-gray-700 mb-3 prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: media.description }}
+        />
+      )}
       <div className="mb-2">
         {media.type === 'audio' ? (
           <div ref={waveformRef} className="w-full min-w-0" />

@@ -9,6 +9,7 @@ type Project = {
   owner: string;
   status: ProjectStatus;
   createdAt: string;
+  description?: string;
 };
 
 type ProjectCardComponentProps = {

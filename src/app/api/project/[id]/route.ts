@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../../auth/requireSession';
+import { validateDescription } from '@/lib/textValidation';
 
 const prisma = new PrismaClient();
 
@@ -42,14 +43,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
     }
     const data = await req.json();
-    const { name, ownerId, status, bandId } = data;
+    const { name, ownerId, status, bandId, description } = data;
     if (!name || !ownerId || !status || !bandId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
+    // Validate description
+    const validation = validateDescription(description);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const updated = await prisma.project.update({
       where: { id: idNr },
-      data: { name, bandId, ownerId, status },
+      data: { name, bandId, ownerId, status, description: validation.sanitized },
     });
     return NextResponse.json(updated);
   } catch (error) {

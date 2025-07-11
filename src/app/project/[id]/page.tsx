@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigationComponent';
 import MediaListItemComponent from './MediaListItemComponent';
+import MediaUploadModal from './MediaUploadModal';
 import LoginFormComponent from "../../components/LoginFormComponent";
 import { useParams } from 'next/navigation';
 
@@ -11,6 +12,7 @@ interface Media {
   projectId: number;
   filePath: string;
   title: string;
+  description?: string;
   uploadDate: string;
   type: 'audio' | 'video' | 'image';
 }
@@ -26,6 +28,7 @@ interface Comment {
 interface Project {
   id: number;
   name: string;
+  description?: string;
   status: 'open' | 'released' | 'archived';
 }
 
@@ -86,9 +89,10 @@ export default function ProjectPage() {
   const [comments, setComments] = useState<{ [mediaId: number]: Comment[] }>({});
   const [commentInputs, setCommentInputs] = useState<{ [mediaId: number]: string }>({});
   const [commentLoading, setCommentLoading] = useState<{ [mediaId: number]: boolean }>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/session').then(res => {
@@ -151,17 +155,22 @@ export default function ProjectPage() {
     return null;
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (file: File, description: string) => {
     setError(null);
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
+    setUploadError(null);
     setUploading(true);
+    
     const formData = new FormData();
     formData.append('file', file);
+    if (description) {
+      formData.append('description', description);
+    }
+    
     const res = await fetch(`/api/project/${id}/media`, {
       method: 'POST',
       body: formData,
     });
+    
     if (res.ok) {
       const newMediaRaw = await res.json();
       if (isMedia(newMediaRaw)) {
@@ -174,10 +183,10 @@ export default function ProjectPage() {
             [newMediaRaw.id]: commentsData.filter(isComment).map(normalizeComment),
           })));
       }
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setShowUploadModal(false);
     } else {
       const err = await res.json();
-      setError(err.error || 'Failed to upload media');
+      setUploadError(err.error || 'Failed to upload media');
     }
     setUploading(false);
   };
@@ -232,20 +241,14 @@ export default function ProjectPage() {
         <label className="block mb-2 font-semibold">
           {project?.status !== 'open' ? 'Project not open' : 'Upload new media'}
         </label>
-        <label
-          className={`inline-block px-4 py-2 rounded ${project?.status === 'open' && isLoggedIn ? 'bg-indigo-600 text-white hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className={`px-4 py-2 rounded ${project?.status === 'open' && isLoggedIn ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+          disabled={uploading || project?.status !== 'open' || !isLoggedIn}
           title={isLoggedIn ? (project?.status === 'open' ? 'Upload new media' : 'Project not open') : 'Sign in to upload'}
         >
-          {uploading ? 'Uploading...' : 'Select File'}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="audio/mp3,audio/wav,video/mp4,video/quicktime,video/x-msvideo,video/mp4"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading || project?.status !== 'open' || !isLoggedIn}
-          />
-        </label>
+          {uploading ? 'Uploading...' : 'Upload Media'}
+        </button>
       </div>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {loading ? (
@@ -268,6 +271,17 @@ export default function ProjectPage() {
           ))}
         </div>
       )}
+
+      <MediaUploadModal
+        open={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadError(null);
+        }}
+        onUpload={handleUpload}
+        loading={uploading}
+        error={uploadError}
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ type Project = {
   status: 'open' | 'released' | 'archived';
   createdAt: string;
   bandId?: number;
+  description?: string;
 };
 
 export default function DashboardPage() {
@@ -30,11 +31,11 @@ export default function DashboardPage() {
   const createNameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [createForm, setCreateForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number }>({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
+  const [createForm, setCreateForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number; description?: string }>({ name: '', status: 'open', bandId: selectedBand?.id || 0, description: '' });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number }>({ name: '', status: 'open', bandId: 0 });
+  const [editForm, setEditForm] = useState<{ name: string; status: 'open' | 'released' | 'archived'; bandId: number; description?: string }>({ name: '', status: 'open', bandId: 0, description: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -150,7 +151,7 @@ export default function DashboardPage() {
         </div>
         <button
           onClick={() => {
-            setCreateForm({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
+            setCreateForm({ name: '', status: 'open', bandId: selectedBand?.id || 0, description: '' });
             setShowCreate(true);
           }}
           className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-500"
@@ -173,7 +174,7 @@ export default function DashboardPage() {
               projects={projects}
               state="open"
               onEdit={(p) => {
-                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0, description: p.description || '' });
                 setShowEdit(p);
               }}
               onDelete={handleDelete}
@@ -186,7 +187,7 @@ export default function DashboardPage() {
               projects={projects}
               state="released"
               onEdit={(p) => {
-                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0, description: p.description || '' });
                 setShowEdit(p);
               }}
               onDelete={handleDelete}
@@ -199,7 +200,7 @@ export default function DashboardPage() {
               projects={projects}
               state="archived"
               onEdit={(p) => {
-                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0 });
+                setEditForm({ name: p.name, status: p.status, bandId: p.bandId ?? selectedBand?.id ?? 0, description: p.description || '' });
                 setShowEdit(p);
               }}
               onDelete={handleDelete}
@@ -228,7 +229,7 @@ export default function DashboardPage() {
                 setCreateError(err.error || 'Failed to create project');
               } else {
                 setShowCreate(false);
-                setCreateForm({ name: '', status: 'open', bandId: selectedBand.id });
+                setCreateForm({ name: '', status: 'open', bandId: selectedBand.id, description: '' });
                 // Optionally refresh projects
                 (async () => {
                   const newProject = await res.json();
@@ -265,7 +266,7 @@ export default function DashboardPage() {
                 setEditError(err.error || 'Failed to update project');
               } else {
                 setShowEdit(null);
-                setEditForm({ name: '', status: 'open', bandId: selectedBand?.id || 0 });
+                setEditForm({ name: '', status: 'open', bandId: selectedBand?.id || 0, description: '' });
                 // Optionally refresh projects
                 (async () => {
                   const updatedProject = await res.json();

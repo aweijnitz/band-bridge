@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
+import RichTextEditor from '../components/RichTextEditor';
 
 const PROJECT_STATUS = ["open", "released", "archived"] as const;
 type ProjectStatus = typeof PROJECT_STATUS[number];
 
 type ProjectModalComponentProps = {
   open: boolean;
-  form: { name: string; status: ProjectStatus; bandId: number };
+  form: { name: string; status: ProjectStatus; bandId: number; description?: string };
   bandName: string;
-  onFormChange: (form: { name: string; status: ProjectStatus; bandId: number }) => void;
+  onFormChange: (form: { name: string; status: ProjectStatus; bandId: number; description?: string }) => void;
   onClose: () => void;
   onCreate: () => void;
   loading?: boolean;
@@ -46,6 +47,18 @@ export default function ProjectModalComponent({ open, form, bandName, onFormChan
         >
           {PROJECT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description (optional)
+          </label>
+          <RichTextEditor
+            value={form.description || ''}
+            onChange={(description) => onFormChange({ ...form, description })}
+            placeholder="Enter project description..."
+            maxLength={512}
+          />
+        </div>
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
           <button onClick={onCreate} className="px-4 py-2 bg-indigo-600 text-white rounded" disabled={loading}>

@@ -12,6 +12,19 @@ jest.mock('form-data', () => {
   }));
 });
 
+// Mock requireSession
+jest.mock('../../src/app/api/auth/requireSession', () => ({
+  requireSession: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock text validation
+jest.mock('../../src/lib/textValidation', () => ({
+  validateDescription: jest.fn().mockImplementation((desc) => ({
+    isValid: true,
+    sanitized: desc,
+  })),
+}));
+
 // Mock PrismaClient to avoid real DB calls
 jest.mock('../../src/generated/prisma', () => {
   return {
@@ -22,6 +35,7 @@ jest.mock('../../src/generated/prisma', () => {
             id: 123,
             projectId: data.projectId,
             title: data.title,
+            description: data.description,
             filePath: data.filePath,
             uploadDate: new Date().toISOString(),
           })
@@ -48,11 +62,12 @@ describe('POST /api/project/[id]/media (unit)', () => {
     };
   }
 
-  function mockFormData(file: MockFile | null, title?: string) {
+  function mockFormData(file: MockFile | null, title?: string, description?: string) {
     return {
       get: (key: string) => {
         if (key === 'file') return file;
         if (key === 'title') return title || null;
+        if (key === 'description') return description || null;
         return null;
       },
     } as any;
@@ -65,7 +80,12 @@ describe('POST /api/project/[id]/media (unit)', () => {
       statusText: 'OK',
     });
     const file = mockFile('mymedia.mp3', 'dummydata');
-    const req = { formData: async () => mockFormData(file) } as any;
+    const req = { 
+      formData: async () => mockFormData(file),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
     const params = Promise.resolve({ id: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(201);
@@ -75,12 +95,38 @@ describe('POST /api/project/[id]/media (unit)', () => {
     expect(data.filePath).toContain('mymedia.mp3');
   });
 
+  it('should upload media with description', async () => {
+    ((fetch as any) as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ fileName: '1710000000000_mymedia.mp3' }),
+      statusText: 'OK',
+    });
+    const file = mockFile('mymedia.mp3', 'dummydata');
+    const description = '<b>Test</b> description';
+    const req = { 
+      formData: async () => mockFormData(file, undefined, description),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
+    const params = Promise.resolve({ id: '1' });
+    const res = await POST(req, { params });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.description).toBe('<b>Test</b> description');
+  });
+
   it('should return 400 for missing file', async () => {
-    const req = { formData: async () => mockFormData(null) } as any;
+    const req = { 
+      formData: async () => mockFormData(null),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
     const params = Promise.resolve({ id: '1' });
     const res = await POST(req, { params });
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toBe('Missing file or invalid project id');
+    expect(data.error).toBe('Missing file');
   });
 }); 

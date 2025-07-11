@@ -3,6 +3,7 @@ import { PrismaClient } from '@/generated/prisma';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { requireSession } from '../../../auth/requireSession';
+import { validateDescription } from '@/lib/textValidation';
 
 const prisma = new PrismaClient();
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const file = formData.get('file') as File | null;
     let title = formData.get('title') as string | null;
+    const description = formData.get('description') as string | null;
     
     if (!file) {
       console.warn('[Media Upload] Missing file');
@@ -104,6 +106,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!title) {
       title = file.name.replace(/\.[^/.]+$/, '');
     }
+
+    // Validate description
+    const validation = validateDescription(description);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const type: 'audio' | 'video' | 'image' = ['mp3','wav'].includes(extension) ? 'audio' : ['mp4','mov','avi','h264','m4v'].includes(extension) ? 'video' : 'image';
@@ -113,6 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: {
           projectId,
           title,
+          description: validation.sanitized,
           filePath: fileName,
           type,
         },

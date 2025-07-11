@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { requireSession } from '../auth/requireSession';
+import { validateDescription } from '@/lib/textValidation';
 
 const prisma = new PrismaClient();
 
@@ -39,19 +40,27 @@ export async function POST(req: NextRequest) {
   await requireSession(req);
   try {
     const body = await req.json();
-    const { name, ownerId, status, bandId } = body;
+    const { name, ownerId, status, bandId, description } = body;
     if (!name || !ownerId || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (!['open', 'released', 'archived'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
+
+    // Validate description
+    const validation = validateDescription(description);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const project = await prisma.project.create({
       data: {
         name,
         ownerId,
         status,
         bandId,
+        description: validation.sanitized,
       },
     });
     return NextResponse.json(project, { status: 201 });
