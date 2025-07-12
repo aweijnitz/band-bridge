@@ -37,6 +37,7 @@ jest.mock('../../src/generated/prisma', () => {
             title: data.title,
             description: data.description,
             filePath: data.filePath,
+            type: data.type,
             uploadDate: new Date().toISOString(),
           })
         ),
@@ -128,5 +129,69 @@ describe('POST /api/project/[id]/media (unit)', () => {
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe('Missing file');
+  });
+
+  it('should upload image file (jpg)', async () => {
+    ((fetch as any) as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ fileName: '1710000000000_image.jpg' }),
+      statusText: 'OK',
+    });
+    const file = mockFile('image.jpg', 'dummyimagedata');
+    const req = { 
+      formData: async () => mockFormData(file),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
+    const params = Promise.resolve({ id: '1' });
+    const res = await POST(req, { params });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.title).toBe('image');
+    expect(data.type).toBe('image');
+    expect(data.filePath).toContain('image.jpg');
+  });
+
+  it('should upload image file (png)', async () => {
+    ((fetch as any) as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ fileName: '1710000000000_photo.png' }),
+      statusText: 'OK',
+    });
+    const file = mockFile('photo.png', 'dummyimagedata');
+    const req = { 
+      formData: async () => mockFormData(file),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
+    const params = Promise.resolve({ id: '1' });
+    const res = await POST(req, { params });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.title).toBe('photo');
+    expect(data.type).toBe('image');
+    expect(data.filePath).toContain('photo.png');
+  });
+
+  it('should return 400 for unsupported file type', async () => {
+    ((fetch as any) as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ fileName: '1710000000000_document.pdf' }),
+      statusText: 'OK',
+    });
+    const file = mockFile('document.pdf', 'dummydata');
+    const req = { 
+      formData: async () => mockFormData(file),
+      headers: {
+        get: (name: string) => name === 'content-length' ? '1000' : null
+      }
+    } as any;
+    const params = Promise.resolve({ id: '1' });
+    const res = await POST(req, { params });
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toContain('Unsupported file type: pdf');
   });
 }); 

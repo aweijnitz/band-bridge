@@ -3,6 +3,7 @@ import fileUpload, { UploadedFile } from 'express-fileupload';
 import path from 'path';
 import fs from 'fs/promises';
 import { execFile } from 'child_process';
+import sharp from 'sharp';
 import { parseSize } from './parseSize';
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 const AUDIO_EXTS = ['.mp3', '.wav'];
+const IMAGE_EXTS = ['.jpg', '.jpeg', '.png'];
 
 async function handleUpload(req: Request, res: Response): Promise<void> {
   if (!req.files || !(req.files as Record<string, UploadedFile>).file) {
@@ -46,6 +48,13 @@ async function handleUpload(req: Request, res: Response): Promise<void> {
           else resolve();
         });
       });
+    } else if (IMAGE_EXTS.includes(ext)) {
+      // Generate thumbnail for images
+      const thumbnailPath = `${filePath}_thumb.jpg`;
+      await sharp(filePath)
+        .resize(256, 256, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toFile(thumbnailPath);
     }
     res.status(201).json({ fileName });
   } catch (err: unknown) {
@@ -71,6 +80,10 @@ app.delete('/delete-media', async (req: Request, res: Response) => {
     if (AUDIO_EXTS.includes(ext)) {
       try {
         await fs.unlink(filePath + '.dat');
+      } catch {}
+    } else if (IMAGE_EXTS.includes(ext)) {
+      try {
+        await fs.unlink(filePath + '_thumb.jpg');
       } catch {}
     }
     res.json({ success: true, deleted: fileName });

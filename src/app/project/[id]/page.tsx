@@ -5,6 +5,7 @@ import BreadcrumbNavigationComponent from '../../components/BreadcrumbNavigation
 import MediaListItemComponent from './MediaListItemComponent';
 import MediaUploadModal from './MediaUploadModal';
 import LoginFormComponent from "../../components/LoginFormComponent";
+import ImageGalleryModal, { ImageThumbnail, ImageItem } from '../../components/ImageGallery';
 import { useParams } from 'next/navigation';
 
 interface Media {
@@ -93,6 +94,8 @@ export default function ProjectPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     fetch('/api/auth/session').then(res => {
@@ -233,6 +236,26 @@ export default function ProjectPage() {
     }
   };
 
+  const handleImageClick = (imageIndex: number) => {
+    setSelectedImageIndex(imageIndex);
+    setShowImageGallery(true);
+  };
+
+  // Group media by type
+  const audioMedia = mediaList.filter(m => m.type === 'audio');
+  const videoMedia = mediaList.filter(m => m.type === 'video');
+  const imageMedia = mediaList.filter(m => m.type === 'image');
+
+  // Convert images to gallery format
+  const imageItems: ImageItem[] = imageMedia.map(img => ({
+    id: img.projectId,
+    mediaId: img.id,
+    title: img.title,
+    description: img.description,
+    filePath: img.filePath,
+    uploadDate: img.uploadDate,
+  }));
+
   return (
     <div className="min-h-screen bg-zinc-400 p-8">
       <BreadcrumbNavigationComponent projectId={id} projectName={project?.name} />
@@ -257,7 +280,8 @@ export default function ProjectPage() {
         <div className="text-gray-600">No media in this project yet.</div>
       ) : (
         <div className="space-y-8">
-          {mediaList.map((media) => (
+          {/* Audio Media */}
+          {audioMedia.map((media) => (
             <MediaListItemComponent
               key={media.id}
               media={media}
@@ -269,6 +293,38 @@ export default function ProjectPage() {
               onDeleteMedia={handleDeleteMedia}
             />
           ))}
+
+          {/* Video Media */}
+          {videoMedia.map((media) => (
+            <MediaListItemComponent
+              key={media.id}
+              media={media}
+              comments={comments[media.id]}
+              onAddComment={handleAddComment}
+              commentInput={commentInputs[media.id]}
+              onCommentInputChange={(e) => handleCommentChange(media.id, e.target.value)}
+              commentLoading={commentLoading[media.id]}
+              onDeleteMedia={handleDeleteMedia}
+            />
+          ))}
+
+          {/* Images Section */}
+          {imageItems.length > 0 && (
+            <div className="bg-zinc-300 rounded shadow p-6">
+              <h2 className="text-lg mb-4">
+                Images ({imageItems.length})
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {imageItems.map((image, index) => (
+                  <ImageThumbnail
+                    key={`${image.mediaId}-${image.filePath}`}
+                    image={image}
+                    onClick={() => handleImageClick(index)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -281,6 +337,14 @@ export default function ProjectPage() {
         onUpload={handleUpload}
         loading={uploading}
         error={uploadError}
+      />
+
+      {/* Image Gallery Modal */}
+      <ImageGalleryModal
+        images={imageItems}
+        isOpen={showImageGallery}
+        onClose={() => setShowImageGallery(false)}
+        initialIndex={selectedImageIndex}
       />
     </div>
   );

@@ -11,26 +11,32 @@ interface MediaUploadModalProps {
 }
 
 export default function MediaUploadModal({ open, onClose, onUpload, loading, error }: MediaUploadModalProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [description, setDescription] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) {
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setDescription('');
     }
   }, [open]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(files);
     }
   };
 
   const handleUpload = () => {
-    if (selectedFile) {
-      onUpload(selectedFile, description);
+    if (selectedFiles.length > 0) {
+      // For now, upload files one by one. The onUpload callback expects a single file.
+      // In a real implementation, you might want to modify the parent component
+      // to handle multiple files or upload them sequentially here.
+      selectedFiles.forEach(file => {
+        onUpload(file, description);
+      });
     }
   };
 
@@ -49,13 +55,18 @@ export default function MediaUploadModal({ open, onClose, onUpload, loading, err
           <input
             ref={fileInputRef}
             type="file"
-            accept="audio/mp3,audio/wav,video/mp4,video/quicktime,video/x-msvideo,video/mp4"
+            accept="audio/mp3,audio/wav,video/mp4,video/quicktime,video/x-msvideo,video/mp4,image/jpeg,image/jpg,image/png"
             onChange={handleFileSelect}
+            multiple
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          {selectedFile && (
+          {selectedFiles.length > 0 && (
             <div className="mt-2 text-sm text-gray-600">
-              Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+              {selectedFiles.length === 1 ? (
+                <>Selected: {selectedFiles[0].name} ({(selectedFiles[0].size / (1024 * 1024)).toFixed(2)} MB)</>
+              ) : (
+                <>Selected {selectedFiles.length} files ({(selectedFiles.reduce((acc, file) => acc + file.size, 0) / (1024 * 1024)).toFixed(2)} MB total)</>
+              )}
             </div>
           )}
         </div>
@@ -83,7 +94,7 @@ export default function MediaUploadModal({ open, onClose, onUpload, loading, err
           <button 
             onClick={handleUpload} 
             className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
-            disabled={loading || !selectedFile}
+            disabled={loading || selectedFiles.length === 0}
           >
             {loading ? 'Uploading...' : 'Upload'}
           </button>

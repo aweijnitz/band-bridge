@@ -3,6 +3,7 @@ import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
 import Regions from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import Link from 'next/link';
+import ImageGalleryModal, { ImageThumbnail } from '../../components/ImageGallery';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -65,6 +66,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showImageGallery, setShowImageGallery] = useState(false);
 
   // Fetch the precomputed waveform for audio files
   useEffect(() => {
@@ -238,6 +240,12 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
     fetch('/api/auth/session').then(res => setIsLoggedIn(res.ok));
   }, []);
 
+  const handleImageClick = () => {
+    if (media.type === 'image') {
+      setShowImageGallery(true);
+    }
+  };
+
   return (
     <div className="bg-zinc-300 rounded shadow p-6 relative">
       {/* Top right buttons */}
@@ -305,33 +313,47 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
       <div className="mb-2">
         {media.type === 'audio' ? (
           <div ref={waveformRef} className="w-full min-w-0" />
-        ) : (
+        ) : media.type === 'video' ? (
           <video ref={videoRef} className="w-full" controls>
             <source src={`/api/project/${media.projectId}/media/file?file=${encodeURIComponent(media.filePath)}&type=file`} />
           </video>
-        )}
+        ) : media.type === 'image' ? (
+          <ImageThumbnail
+            image={{
+              id: media.projectId,
+              mediaId: media.id,
+              title: media.title,
+              description: media.description,
+              filePath: media.filePath,
+              uploadDate: media.uploadDate,
+            }}
+            onClick={handleImageClick}
+          />
+        ) : null}
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={handlePlayPause}
-          className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 flex items-center justify-center"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>
-          )}
-        </button>
-        <button
-          onClick={handleStop}
-          className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 flex items-center justify-center"
-          aria-label="Stop"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
-        </button>
-      </div>
+      {(media.type === 'audio' || media.type === 'video') && (
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={handlePlayPause}
+            className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 flex items-center justify-center"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>
+            )}
+          </button>
+          <button
+            onClick={handleStop}
+            className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 flex items-center justify-center"
+            aria-label="Stop"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+          </button>
+        </div>
+      )}
       <div>
         <h3 className="mb-2 text-sm">Comments</h3>
         <ul className="mb-2">
@@ -373,6 +395,23 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
           </button>
         </div>
       </div>
+
+      {/* Image Gallery Modal */}
+      {media.type === 'image' && (
+        <ImageGalleryModal
+          images={[{
+            id: media.projectId,
+            mediaId: media.id,
+            title: media.title,
+            description: media.description,
+            filePath: media.filePath,
+            uploadDate: media.uploadDate,
+          }]}
+          isOpen={showImageGallery}
+          onClose={() => setShowImageGallery(false)}
+          initialIndex={0}
+        />
+      )}
     </div>
   );
 } 

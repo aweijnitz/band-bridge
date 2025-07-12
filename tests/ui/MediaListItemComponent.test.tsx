@@ -21,6 +21,18 @@ jest.mock("wavesurfer.js", () => {
   };
 });
 
+// Mock the image gallery components
+jest.mock("../../src/app/components/ImageGallery", () => ({
+  __esModule: true,
+  default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => 
+    isOpen ? <div data-testid="image-gallery-modal"><button onClick={onClose}>Close Gallery</button></div> : null,
+  ImageThumbnail: ({ image, onClick }: { image: any; onClick: () => void }) => (
+    <div data-testid="image-thumbnail" onClick={onClick}>
+      <img src={`/api/project/${image.id}/media/file?fileName=${image.filePath}_thumb.jpg`} alt={image.title} />
+    </div>
+  ),
+}));
+
 beforeAll(() => {
   window.HTMLMediaElement.prototype.load = jest.fn();
   window.HTMLMediaElement.prototype.play = jest.fn();
@@ -47,6 +59,16 @@ describe("MediaListItemComponent", () => {
     projectId: 1,
     title: "Test Media",
     filePath: "test.mp3",
+    type: "audio" as const,
+    uploadDate: new Date().toISOString(),
+  };
+
+  const mockImageMedia = {
+    id: 2,
+    projectId: 1,
+    title: "Test Image",
+    filePath: "test.jpg",
+    type: "image" as const,
     uploadDate: new Date().toISOString(),
   };
   const mockComments = [
@@ -68,7 +90,7 @@ describe("MediaListItemComponent", () => {
   const mockOnAddComment = jest.fn();
   const mockOnCommentInputChange = jest.fn();
 
-  it("renders song title and upload date", async () => {
+  it("renders media title and upload date", async () => {
     await act(() => {
       render(
         <MediaListItemComponent
@@ -140,5 +162,98 @@ describe("MediaListItemComponent", () => {
     const btn2 = await screen.findByLabelText("Delete Song");
     expect(btn2).toBeInTheDocument();
     expect(btn2).not.toBeDisabled();
+  });
+
+  describe("Image Media", () => {
+    it("renders image thumbnail for image media", async () => {
+      await act(() => {
+        render(
+          <MediaListItemComponent
+            media={mockImageMedia}
+            comments={[]}
+            onAddComment={mockOnAddComment}
+            commentInput=""
+            onCommentInputChange={mockOnCommentInputChange}
+            commentLoading={false}
+            onDeleteMedia={jest.fn()}
+          />
+        );
+      });
+      expect(screen.getByText("Test Image")).toBeInTheDocument();
+      expect(screen.getByTestId("image-thumbnail")).toBeInTheDocument();
+    });
+
+    it("opens image gallery when thumbnail is clicked", async () => {
+      await act(() => {
+        render(
+          <MediaListItemComponent
+            media={mockImageMedia}
+            comments={[]}
+            onAddComment={mockOnAddComment}
+            commentInput=""
+            onCommentInputChange={mockOnCommentInputChange}
+            commentLoading={false}
+            onDeleteMedia={jest.fn()}
+          />
+        );
+      });
+      
+      const thumbnail = screen.getByTestId("image-thumbnail");
+      fireEvent.click(thumbnail);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId("image-gallery-modal")).toBeInTheDocument();
+      });
+    });
+
+    it("does not show play/pause buttons for image media", async () => {
+      await act(() => {
+        render(
+          <MediaListItemComponent
+            media={mockImageMedia}
+            comments={[]}
+            onAddComment={mockOnAddComment}
+            commentInput=""
+            onCommentInputChange={mockOnCommentInputChange}
+            commentLoading={false}
+            onDeleteMedia={jest.fn()}
+          />
+        );
+      });
+      
+      expect(screen.queryByLabelText("Play")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Pause")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Stop")).not.toBeInTheDocument();
+    });
+
+    it("closes image gallery when close button is clicked", async () => {
+      await act(() => {
+        render(
+          <MediaListItemComponent
+            media={mockImageMedia}
+            comments={[]}
+            onAddComment={mockOnAddComment}
+            commentInput=""
+            onCommentInputChange={mockOnCommentInputChange}
+            commentLoading={false}
+            onDeleteMedia={jest.fn()}
+          />
+        );
+      });
+      
+      const thumbnail = screen.getByTestId("image-thumbnail");
+      fireEvent.click(thumbnail);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId("image-gallery-modal")).toBeInTheDocument();
+      });
+
+      const closeButton = screen.getByText("Close Gallery");
+      fireEvent.click(closeButton);
+      
+      await waitFor(() => {
+        expect(screen.queryByTestId("image-gallery-modal")).not.toBeInTheDocument();
+      });
+    });
   });
 });

@@ -114,7 +114,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
-    const type: 'audio' | 'video' | 'image' = ['mp3','wav'].includes(extension) ? 'audio' : ['mp4','mov','avi','h264','m4v'].includes(extension) ? 'video' : 'image';
+    let type: 'audio' | 'video' | 'image';
+    
+    if (['mp3','wav'].includes(extension)) {
+      type = 'audio';
+    } else if (['mp4','mov','avi','h264','m4v'].includes(extension)) {
+      type = 'video';
+    } else if (['jpg','jpeg','png'].includes(extension)) {
+      type = 'image';
+    } else {
+      return NextResponse.json({ error: `Unsupported file type: ${extension}. Supported types: mp3, wav, mp4, mov, avi, h264, m4v, jpg, jpeg, png` }, { status: 400 });
+    }
     
     try {
       const media = await prisma.media.create({
