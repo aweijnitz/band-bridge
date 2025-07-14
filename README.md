@@ -386,6 +386,7 @@ All media and waveform file requests from the frontend are proxied through the N
 This project was created with heavy support by AI agentic code generation workflows, using [Cursor](https://www.cursor.com/). It is amazing what one can achieve, but also amazing what such an advanced tool overlooks. 
 
 Further feature development was done with OpenAI Codex (very compoentent and interesting interaction model!) and Anthropic Claude (amazing, but expensive as you run out of tokens quickly at the €17/month tier).
+
 ---
 
 ## License
