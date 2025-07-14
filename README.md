@@ -21,10 +21,14 @@ A web app for band collaboration: create projects, upload media, and comment on 
 - Band/project management
 - Media upload (audio MP3/WAV and video MP4/MOV/AVI/H.264), download, and deletion
 - Precomputed waveform rendering for instant audio visualization
-- Time-based comments on media items
+- Time-based comments on media items with precise timeCode positioning
 - Deep links to media details (with share button)
 - Responsive, modern UI (Next.js, Tailwind CSS)
-- Robust API and UI test suite
+- Robust API and UI test suite with Jest and Playwright
+- Rich text editor for comments using Jodit React
+- Image gallery support with React Image Gallery
+- Audio waveform visualization using WaveSurfer.js
+- Video playback with Video.js and timeline markers
 - Admin microservice for user, band, and API key management There is no admin UI. Use curl (see examples below)
 
 ---
@@ -99,19 +103,29 @@ If the a new version has been deployed that includes changes to the database sch
 band-bridge/
 ├── src/
 │   ├── app/                # Next.js frontend & API routes
-│   └── backend/
-│       ├── audio/          # Media microservice (Express, waveform pre-compute)
-│       └── admin/          # Admin microservice (Express, Prisma)
+│   │   ├── api/            # API endpoints
+│   │   │   ├── auth/       # Authentication routes
+│   │   │   ├── project/    # Project CRUD and media/song management
+│   │   │   ├── health/     # Health check endpoint
+│   │   │   └── mine/       # User's own projects
+│   │   ├── components/     # Reusable UI components
+│   │   ├── dashboard/      # Dashboard UI
+│   │   └── project/        # Project detail pages
+│   ├── backend/
+│   │   ├── media/          # Media microservice (Express, waveform pre-compute)
+│   │   └── admin/          # Admin microservice (Express, Prisma)
+│   ├── generated/          # Generated Prisma client
+│   └── lib/                # Utility libraries
 ├── public/
 │   └── (static assets only)
-├── prisma/                 # Prisma schema and migrations
+├── prisma/                 # Prisma schema and migrations (in admin service)
 ├── tests/                  # API and UI tests
 ├── docker-compose.yml      # Multi-service orchestration
 └── README.md
 ```
 
 **Media Microservice:**
-  - Located at `src/backend/audio/`
+  - Located at `src/backend/media/`
   - Handles media file uploads, deletions, and waveform pre-computation using [BBC audiowaveform](https://github.com/bbc/audiowaveform).
   - All media and waveform files are stored in a Docker volume mounted at `/assetfilestore` inside the media microservice container. This volume is not directly accessible from the host or the Next.js app.
   - Waveform data is saved as `.dat` files next to the media files (e.g., `media.wav` → `media.wav.dat`).
@@ -134,7 +148,7 @@ band-bridge/
 
 ## Deep Linking & Sharing
 
-Every media item has a unique URL (`/project/[projectId]/media/[mediaId]`). Use the share button to copy a direct link to the clipboard.
+Every media item has a unique URL (`/project/[projectId]/media/[mediaId]`). Songs also have their own URLs (`/project/[projectId]/song/[songId]`). Use the share button to copy a direct link to the clipboard.
 
 ---
 
@@ -287,6 +301,25 @@ curl -X POST http://localhost:4002/admin/reset \
   curl -X DELETE http://localhost:3000/api/project/1/media/2
   ```
 
+### Songs (Legacy Media API)
+
+- **List Songs in Project**
+  ```sh
+  curl http://localhost:3000/api/project/1/song
+  ```
+- **Get Song**
+  ```sh
+  curl http://localhost:3000/api/project/1/song/2
+  ```
+- **Get Song Audio**
+  ```sh
+  curl http://localhost:3000/api/project/1/song/audio?fileName=<fileName>
+  ```
+- **Get Song Waveform**
+  ```sh
+  curl http://localhost:3000/api/project/1/song/waveform?fileName=<fileName>
+  ```
+
 ### Comments
 
 - **List Comments for Media**
@@ -299,6 +332,10 @@ curl -X POST http://localhost:4002/admin/reset \
     -H "Content-Type: application/json" \
     -d '{"text":"Great comment!","time":42.5}'
   ```
+- **Comments for Songs (Legacy)**
+  ```sh
+  curl http://localhost:3000/api/project/1/song/2/comment
+  ```
 
 ### Media File Proxy Endpoints
 
@@ -309,6 +346,10 @@ curl -X POST http://localhost:4002/admin/reset \
 - **Download Waveform Data**
   ```sh
   curl "http://localhost:3000/api/project/1/media/file?file=<fileName>&type=waveform"
+  ```
+- **Get Signed URL for Media**
+  ```sh
+  curl http://localhost:3000/api/project/1/media/2/signed-url
   ```
 - Automatically sets proper MIME types based on file extension (video/mp4, audio/mpeg, etc.)
 - Supports all media types: audio, video, and waveform data
