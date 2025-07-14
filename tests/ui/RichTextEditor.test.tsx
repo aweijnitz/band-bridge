@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { act } from "react";
 
 // Mock Jodit Editor to avoid complex dependencies in tests
 jest.mock('jodit-react', () => {
@@ -23,13 +22,14 @@ import RichTextEditor from '../../src/app/components/RichTextEditor';
 
 describe('RichTextEditor', () => {
   it('renders with default props', async () => {
-    await act(() => render(
+    render(
       <RichTextEditor
         value=""
         onChange={jest.fn()}
       />
-    ));
-    expect(screen.getByTestId('jodit-editor')).toBeInTheDocument();
+    );
+
+    expect(await screen.findByTestId('jodit-editor')).toBeInTheDocument();
     expect(screen.getByText('0/512')).toBeInTheDocument();
   });
 
