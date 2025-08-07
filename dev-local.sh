@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+cp .env .env.bak
+cp .env.local .env
+
 # Start a local Postgres instance if one is not already running
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-testpass}"
 PG_CONTAINER_NAME="bandbridge-dev-postgres"
@@ -38,7 +41,7 @@ npm --prefix src/backend/admin run build:prep
 # Default environment variables for local dev
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/bandbridge}"
 export MEDIA_SERVICE_URL="${MEDIA_SERVICE_URL:-http://localhost:4001}"
-export ADMIN_API_KEY="${ADMIN_API_KEY:-changeme}"
+export ADMIN_API_KEY="${ADMIN_API_KEY:-test-admin-key-123}"
 export MAX_UPLOAD_SIZE="${MAX_UPLOAD_SIZE:-1GB}"
 export FILESTORE_PATH="${FILESTORE_PATH:-$(pwd)/filestore}"
 
