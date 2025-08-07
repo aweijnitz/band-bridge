@@ -11,7 +11,7 @@ A web app for band collaboration: create projects, upload media, and comment on 
 </picture>
 
 <picture>
-   <img src="doc/media-view.png" alt="Screenshot song view" width="320" />
+   <img src="doc/song-view.png" alt="Screenshot song view" width="320" />
 </picture>
 
 ---
