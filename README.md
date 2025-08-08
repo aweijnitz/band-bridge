@@ -1,6 +1,6 @@
 # Band Bridge
 
-A web app for band collaboration: create projects, upload media, and comment on media with time-based markers. Built with Next.js, React, TypeScript, Tailwind CSS, and Postgres (via Prisma). Audio and video files are managed by a dedicated microservice. User, band, and API key management is handled by a secure admin microservice.
+A web app for band collaboration: create projects, upload media (audio, video, and images), and comment on media with time-based markers. Built with Next.js, React, TypeScript, Tailwind CSS, and Postgres (via Prisma). Media files are managed by a dedicated microservice with waveform pre-computation. User, band, and API key management is handled by a secure admin microservice.
 
 <picture>
    <img src="doc/project-dashboard.png" alt="Screenshot project dashboard" width="320" />
@@ -18,29 +18,34 @@ A web app for band collaboration: create projects, upload media, and comment on 
 
 ## Features
 
-- Band/project management
-- Media upload (audio MP3/WAV and video MP4/MOV/AVI/H.264), download, and deletion
-- Precomputed waveform rendering for instant audio visualization
-- Time-based comments on media items with precise timeCode positioning
-- Deep links to media details (with share button)
-- Responsive, modern UI (Next.js, Tailwind CSS)
-- Robust API and UI test suite with Jest and Playwright
-- Rich text editor for comments using Jodit React
-- Image gallery support with React Image Gallery
+- Band/project management with multiple members
+- Media upload (audio MP3/WAV, video MP4/MOV/AVI/H.264, images JPG/PNG), download, and deletion
+- Precomputed waveform rendering for instant audio visualization using BBC audiowaveform
+- Time-based comments on audio/video with precise timeCode positioning
+- Image galleries with project-level comments (not time-based)
+- Individual images display as single media items with per-media comments
+- Multiple images display as unified "Project images" gallery with shared comments
+- Deep links to media details with shareable URLs
+- Responsive, modern UI built with Next.js 15, React 19, and Tailwind CSS 4
+- Session-based authentication with secure middleware protection
+- Rich text editor for descriptions using Jodit React
 - Audio waveform visualization using WaveSurfer.js
-- Video playback with Video.js and timeline markers
-- Admin microservice for user, band, and API key management There is no admin UI. Use curl (see examples below)
+- Video playback with HTML5 video controls
+- Comprehensive test suite: Jest (API/UI), Playwright (E2E)
+- Admin microservice for user, band, and API key management (REST API only, no UI)
 
 ---
 
 ## System Requirements
-- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)
+- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) (v2.0+)
 - Node.js 18+ (for local development)
-- npm (for local development)
+- npm 8+ (for local development)
 
 ---
 
 ## Installation & Setup
+
+### Quick Start (Production Deployment)
 
 1. **Clone the repository:**
    ```sh
@@ -48,52 +53,145 @@ A web app for band collaboration: create projects, upload media, and comment on 
    cd band-bridge
    ```
 
-2. **Copy and edit environment variables:**
+2. **Set up environment variables:**
    ```sh
    cp .env.example .env
    cp src/backend/admin/.env.example src/backend/admin/.env
-   # Edit .env as needed (e.g., set ADMIN_API_KEY, DB_URL, ...)
    ```
-### Changing/setting database password
+   
+   Edit `.env` and set these required variables:
+   ```env
+   DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@db:5432/bandbridge
+   POSTGRES_PASSWORD=YOUR_SECURE_DB_PASSWORD
+   ADMIN_API_KEY=YOUR_SECURE_ADMIN_API_KEY
+   MEDIA_SERVICE_URL=http://media:4001
+   MAX_UPLOAD_SIZE=1GB
+   NEXTAUTH_SECRET=YOUR_NEXTAUTH_SECRET_KEY
+   NEXTAUTH_URL=http://localhost:3000
+   JWT_SECRET=YOUR_JWT_SECRET
+   ```
 
-**Change the actual password**
+   Edit `src/backend/admin/.env` with the same database settings:
+   ```env
+   DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@db:5432/bandbridge
+   ADMIN_API_KEY=YOUR_SECURE_ADMIN_API_KEY
+   ```
 
-```sh
-  docker exec -it <container_name_or_id> psql -U postgres
-  ALTER USER postgres WITH PASSWORD 'your_new_secure_password';
-  CTRL-D exits
-```
-
-**Set the password in the shell that starts docker compose**
-
-  ```export POSTGRES_PASSWORD=your_new_secure_database_password```
-
-
-
-3. **Start all services (including the audio and admin microservices):**
+3. **Build and start all services:**
    ```sh
-   export POSTGRES_PASSWORD=your_new_secure_database_password
-   export ADMIN_API_KEY=your_new_secure_API_key
+   # Build Docker images
    ./buildDockerImages.sh
-   docker compose up # or docker compose up -d  to run in the background
+   
+   # Start all services
+   docker compose up -d
    ```
-   - This will start:
-     - The Next.js webapp
-     - The Postgres database
-     - The media microservice (Express, with audiowaveform and ffmpeg)
-     - The admin microservice (Express, Prisma)
+   
+   This starts:
+   - **Web app** (port 3000) - Next.js frontend and API
+   - **Database** (internal) - PostgreSQL with persistent storage
+   - **Media service** (internal) - Express server with audiowaveform and ffmpeg
+   - **Admin service** (port 4002) - Express server for user/band management
 
-4. **Stop all services:**
+4. **Verify deployment:**
+   ```sh
+   # Check all services are running
+   docker compose ps
+   
+   # Check application health
+   curl http://localhost:3000/api/health
+   curl http://localhost:4002/health
+   ```
+
+5. **Stop all services:**
    ```sh
    docker compose down
    ```
-5. (upgrade scenario) Migrating the database
 
-If the a new version has been deployed that includes changes to the database schema, the database has to be migrated.
+### Database Migrations
 
-  ```sh
-  docker compose -f docker-compose.yml exec admin npx prisma migrate deploy  # Assuming system running
-  ```
+#### Initial Setup (First Time)
+The database schema is automatically created when the services start for the first time.
+
+#### Upgrading to New Version
+When deploying a new version with database changes, run migrations:
+
+```sh
+# For running system (recommended)
+docker compose exec admin npx prisma migrate deploy
+
+# Alternative: Stop system, migrate, then restart
+docker compose down
+docker compose up -d db
+docker compose exec db psql -U postgres -d bandbridge -c "SELECT 1;" # Wait for DB ready
+docker compose up -d admin
+docker compose exec admin npx prisma migrate deploy
+docker compose up -d
+```
+
+#### Manual Database Operations
+
+**Connect to database:**
+```sh
+docker compose exec db psql -U postgres -d bandbridge
+```
+
+**Reset database (⚠️ DESTRUCTIVE):**
+```sh
+# This will delete ALL data
+docker compose exec admin npx prisma migrate reset --force
+```
+
+**Change database password:**
+```sh
+# 1. Connect to database
+docker compose exec db psql -U postgres
+ALTER USER postgres WITH PASSWORD 'your_new_password';
+\q
+
+# 2. Update environment variables in .env and src/backend/admin/.env
+# 3. Restart services
+docker compose down && docker compose up -d
+```
+
+### Local Development Setup
+
+For development with hot-reload and faster iteration:
+
+1. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+
+2. **Start database and services:**
+   ```sh
+   # Start only database and supporting services
+   docker compose up -d db media admin
+   ```
+
+3. **Set up local environment:**
+   ```sh
+   cp .env.example .env
+   # Edit .env with local settings (DATABASE_URL should point to localhost:5432)
+   ```
+
+4. **Run database migrations:**
+   ```sh
+   npm run generate:schema
+   ```
+
+5. **Start development server:**
+   ```sh
+   npm run dev
+   ```
+   
+   The app will be available at http://localhost:3000 with hot-reload enabled.
+
+6. **Run tests:**
+   ```sh
+   npm run test          # API and UI tests
+   npm run test:e2e      # End-to-end tests
+   npm run lint          # Code linting
+   ```
 
 ---
 
@@ -292,10 +390,19 @@ curl -X POST http://localhost:4002/admin/reset \
   ```sh
   curl http://localhost:3000/api/project/1/media/2
   ```
-- **Upload Media (audio/video)**
+- **Upload Media (audio/video/image)**
   ```sh
-  curl -F "file=@/path/to/file.mp4" -F "title=My File" http://localhost:3000/api/project/1/media
+  # Audio file
+  curl -F "file=@/path/to/audio.mp3" -F "title=My Song" -F "description=<p>Rich text description</p>" http://localhost:3000/api/project/1/media
+  
+  # Video file  
+  curl -F "file=@/path/to/video.mp4" -F "title=My Video" http://localhost:3000/api/project/1/media
+  
+  # Image file
+  curl -F "file=@/path/to/image.jpg" -F "title=My Image" http://localhost:3000/api/project/1/media
   ```
+  Note: Descriptions support rich HTML formatting.
+  
 - **Delete Media**
   ```sh
   curl -X DELETE http://localhost:3000/api/project/1/media/2
@@ -322,6 +429,7 @@ curl -X POST http://localhost:4002/admin/reset \
 
 ### Comments
 
+#### Media Comments (Time-based)
 - **List Comments for Media**
   ```sh
   curl http://localhost:3000/api/project/1/media/2/comment
@@ -332,6 +440,21 @@ curl -X POST http://localhost:4002/admin/reset \
     -H "Content-Type: application/json" \
     -d '{"text":"Great comment!","time":42.5}'
   ```
+
+#### Gallery Comments (Project-level)
+- **List Gallery Comments**
+  ```sh
+  curl http://localhost:3000/api/project/1/gallery/comment
+  ```
+- **Add Gallery Comment (requires authentication)**
+  ```sh
+  curl -X POST http://localhost:3000/api/project/1/gallery/comment \
+    -H "Content-Type: application/json" \
+    -d '{"text":"Great gallery comment!"}'
+  ```
+  Note: Gallery comments are stored with `time: -1` as a special marker.
+
+#### Legacy API
 - **Comments for Songs (Legacy)**
   ```sh
   curl http://localhost:3000/api/project/1/song/2/comment
@@ -363,21 +486,56 @@ All media and waveform file requests from the frontend are proxied through the N
 ---
 
 ## Environment Variables
-- `NEXT_PUBLIC_BAND_NAME`: The band name shown in the UI.
-- `MEDIA_SERVICE_PORT`: Port for the media microservice (default: 4001, internal only).
-- `MEDIA_SERVICE_URL`: URL for the media microservice (used by the Next.js API to proxy requests).
-- `MAX_UPLOAD_SIZE`: Maximum allowed file upload size for the media microservice. Accepts human readable values like `1GB`, `500MB`, `0.5GB` (default: `1GB`).
-- `ADMIN_API_KEY`: Static API key for admin microservice.
-- `DATABASE_URL`: Postgres connection string for all services.
-- `NEXTAUTH_SECRET`, `NEXTAUTH_URL`: For NextAuth.js (if used).
+
+### Required Variables
+- `DATABASE_URL`: PostgreSQL connection string for all services (e.g., `postgresql://postgres:password@db:5432/bandbridge`)
+- `POSTGRES_PASSWORD`: Database password (must match DATABASE_URL)
+- `ADMIN_API_KEY`: Static API key for admin microservice authentication
+- `MEDIA_SERVICE_URL`: Internal URL for media microservice (default: `http://media:4001`)
+- `NEXTAUTH_SECRET`: Secret key for NextAuth.js session encryption
+- `JWT_SECRET`: Secret key for JWT token generation
+
+### Optional Variables
+- `NEXT_PUBLIC_BAND_NAME`: Band name displayed in the UI (default: "Band Bridge")
+- `MAX_UPLOAD_SIZE`: Maximum file upload size (default: `1GB`, accepts `500MB`, `0.5GB`, etc.)
+- `NEXTAUTH_URL`: Base URL for NextAuth.js (default: `http://localhost:3000`)
+- `AUDIO_LINK_EXPIRY_DAYS`: Days before audio links expire (default: 100)
+
+### Internal/Auto-configured
+- `MEDIA_SERVICE_PORT`: Media microservice port (4001, internal only)
+- `NODE_ENV`: Runtime environment (set by Docker Compose)
 
 ---
 
 ## Notes
-- **Waveform Pre-Compute:** On upload, the media microservice runs `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
+
+### Media Handling
+- **Waveform Pre-Compute:** On upload, the media microservice runs BBC `audiowaveform` to generate a `.dat` file for fast waveform rendering in the UI.
 - **File Storage:** All media and waveform files are stored in a Docker volume at `/assetfilestore` inside the media microservice. They are not accessible from the Next.js app or the host filesystem.
-- **Tests:** Run `npm test` to execute all API and UI tests.
-- **E2E Tests:** Run `npm run test:e2e` to execute the Playwright end-to-end suite.
+- **Image Galleries:** 
+  - Single images display as individual media items with per-media comments
+  - Multiple images display as "Project images" gallery with project-level comments
+  - Gallery comments use `time: -1` as a special marker to distinguish from time-based media comments
+
+### Authentication & Security
+- **Session-based Authentication:** Uses secure HTTP-only cookies with database-stored sessions
+- **Protected Routes:** Middleware protects all routes except login and public deep-links
+- **File Proxying:** All file access goes through Next.js API for security and abstraction
+- **Rich Text Sanitization:** All HTML content is sanitized using DOMPurify
+
+### Technology Stack
+- **Frontend:** Next.js 15.3.2 with React 19.0.0 and Tailwind CSS 4
+- **Backend:** Express.js microservices with TypeScript
+- **Database:** PostgreSQL 15 with Prisma ORM
+- **Media Processing:** BBC audiowaveform, FFmpeg
+- **Testing:** Jest (API/UI), Playwright (E2E), React Testing Library
+- **Development:** Hot-reload with Turbopack, ESLint for code quality
+
+### Testing
+- **Unit Tests:** `npm test` - Jest-based API and UI tests
+- **E2E Tests:** `npm run test:e2e` - Playwright end-to-end test suite
+- **Coverage:** `npm run test:coverage` - Generate test coverage reports
+- **Linting:** `npm run lint` - ESLint code quality checks
 
 ---
 

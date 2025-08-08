@@ -97,6 +97,9 @@ export default function ProjectPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [galleryComments, setGalleryComments] = useState<Comment[]>([]);
+  const [galleryCommentInput, setGalleryCommentInput] = useState('');
+  const [galleryCommentLoading, setGalleryCommentLoading] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/session').then(res => {
@@ -147,6 +150,18 @@ export default function ProjectPage() {
               [media.id]: commentsData.filter(isComment).map(normalizeComment),
             })));
         });
+
+        // Fetch gallery comments if there are images
+        const hasImages = data.filter(isMedia).some(media => media.type === 'image');
+        if (hasImages) {
+          fetch(`/api/project/${id}/gallery/comment`)
+            .then(res => {
+              if (!res.ok) return [];
+              return res.json();
+            })
+            .then((commentsData: unknown[]) => setGalleryComments(commentsData.filter(isComment).map(normalizeComment)))
+            .catch(() => setGalleryComments([]));
+        }
       })
       .catch(() => setError('Failed to load media'))
       .finally(() => setLoading(false));
@@ -242,6 +257,35 @@ export default function ProjectPage() {
     setShowImageGallery(true);
   };
 
+  const handleAddGalleryComment = async () => {
+    if (!galleryCommentInput.trim()) return;
+    setGalleryCommentLoading(true);
+    try {
+      const res = await fetch(`/api/project/${id}/gallery/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: galleryCommentInput }),
+      });
+      if (res.ok) {
+        const newCommentRaw = await res.json();
+        if (isComment(newCommentRaw)) {
+          setGalleryComments(prev => [...prev, normalizeComment(newCommentRaw)]);
+          setGalleryCommentInput('');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to add gallery comment:', error);
+    }
+    setGalleryCommentLoading(false);
+  };
+
+  const handleGalleryCommentKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && !galleryCommentLoading) {
+      event.preventDefault();
+      handleAddGalleryComment();
+    }
+  };
+
   // Group media by type
   const audioMedia = mediaList.filter(m => m.type === 'audio');
   const videoMedia = mediaList.filter(m => m.type === 'video');
@@ -298,6 +342,8 @@ export default function ProjectPage() {
               onCommentInputChange={(e) => handleCommentChange(media.id, e.target.value)}
               commentLoading={commentLoading[media.id]}
               onDeleteMedia={handleDeleteMedia}
+              allImages={mediaList}
+              onImageClick={handleImageClick}
             />
           ))}
 
@@ -312,16 +358,34 @@ export default function ProjectPage() {
               onCommentInputChange={(e) => handleCommentChange(media.id, e.target.value)}
               commentLoading={commentLoading[media.id]}
               onDeleteMedia={handleDeleteMedia}
+              allImages={mediaList}
+              onImageClick={handleImageClick}
             />
           ))}
 
-          {/* Images Section */}
-          {imageItems.length > 0 && (
+          {/* Single Image - show as individual media item */}
+          {imageMedia.length === 1 && imageMedia.map((media) => (
+            <MediaListItemComponent
+              key={media.id}
+              media={media}
+              comments={comments[media.id]}
+              onAddComment={handleAddComment}
+              commentInput={commentInputs[media.id]}
+              onCommentInputChange={(e) => handleCommentChange(media.id, e.target.value)}
+              commentLoading={commentLoading[media.id]}
+              onDeleteMedia={handleDeleteMedia}
+              allImages={mediaList}
+              onImageClick={handleImageClick}
+            />
+          ))}
+
+          {/* Multiple Images Section - show as gallery */}
+          {imageItems.length > 1 && (
             <div className="bg-zinc-300 rounded shadow p-6">
               <h2 className="text-lg mb-4">
-                Images ({imageItems.length})
+                Project images ({imageItems.length})
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                 {imageItems.map((image, index) => (
                   <ImageThumbnail
                     key={`${image.mediaId}-${image.filePath}`}
@@ -329,6 +393,39 @@ export default function ProjectPage() {
                     onClick={() => handleImageClick(index)}
                   />
                 ))}
+              </div>
+              
+              {/* Gallery Comments */}
+              <div>
+                <h3 className="mb-2 text-sm">Comments</h3>
+                <ul className="mb-2">
+                  {galleryComments.map((comment) => (
+                    <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
+                      <span className='text-sm'>
+                        {comment.text}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-2 text-right flex-1">{comment.user?.username}</span>
+                      <span className="text-xs text-gray-400 ml-2">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={galleryCommentInput}
+                    onChange={e => setGalleryCommentInput(e.target.value)}
+                    className="flex-1 border rounded px-2 py-1"
+                    placeholder="Add a comment..."
+                    onKeyDown={handleGalleryCommentKeyDown}
+                  />
+                  <button
+                    onClick={handleAddGalleryComment}
+                    className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                    disabled={galleryCommentLoading || !galleryCommentInput.trim()}
+                  >
+                    {galleryCommentLoading ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

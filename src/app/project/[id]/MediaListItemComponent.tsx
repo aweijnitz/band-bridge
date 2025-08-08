@@ -54,9 +54,11 @@ interface MediaListItemComponentProps {
   onCommentInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   commentLoading: boolean;
   onDeleteMedia: (mediaId: number) => void;
+  allImages?: Media[];
+  onImageClick?: (imageIndex: number) => void;
 }
 
-export default function MediaListItemComponent({ media, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, onDeleteMedia }: MediaListItemComponentProps) {
+export default function MediaListItemComponent({ media, comments, onAddComment, commentInput, onCommentInputChange, commentLoading, onDeleteMedia, allImages, onImageClick }: MediaListItemComponentProps) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -241,7 +243,14 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
   }, []);
 
   const handleImageClick = () => {
-    if (media.type === 'image') {
+    if (media.type === 'image' && onImageClick && allImages) {
+      // Find the index of current image in the full project gallery
+      const imageIndex = allImages.filter(m => m.type === 'image').findIndex(img => img.id === media.id);
+      if (imageIndex >= 0) {
+        onImageClick(imageIndex);
+      }
+    } else if (media.type === 'image') {
+      // Fallback to single-image gallery if no project gallery available
       setShowImageGallery(true);
     }
   };
@@ -360,7 +369,7 @@ export default function MediaListItemComponent({ media, comments, onAddComment, 
           {(comments || []).map((comment) => (
             <li key={comment.id} className="border-b last:border-b-0 py-1 text-gray-700 flex justify-between items-center">
               <span className='text-sm'>
-                {comment.time !== undefined && comment.time !== null && (
+                {comment.time !== undefined && comment.time !== null && comment.time !== -1 && (
                   <button
                     type="button"
                     className="bg-zinc-200 text-indigo-800 px-1 py-0.5 rounded text-xs font-mono mr-2 hover:bg-blue-200 focus:outline-none"
