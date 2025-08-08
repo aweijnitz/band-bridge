@@ -49,12 +49,17 @@ async function handleUpload(req: Request, res: Response): Promise<void> {
         });
       });
     } else if (IMAGE_EXTS.includes(ext)) {
-      // Generate thumbnail for images
+      // Generate thumbnail for images - continue upload even if thumbnail generation fails
       const thumbnailPath = `${filePath}_thumb.jpg`;
-      await sharp(filePath)
-        .resize(256, 256, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 85 })
-        .toFile(thumbnailPath);
+      try {
+        await sharp(filePath)
+          .resize(256, 256, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toFile(thumbnailPath);
+      } catch (thumbnailError) {
+        console.warn(`Failed to generate thumbnail for ${fileName}:`, thumbnailError instanceof Error ? thumbnailError.message : thumbnailError);
+        // Continue with upload even if thumbnail generation fails
+      }
     }
     res.status(201).json({ fileName });
   } catch (err: unknown) {

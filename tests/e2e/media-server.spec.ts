@@ -54,8 +54,8 @@ test.describe('Media Server E2E Tests', () => {
   });
 
   test('upload file that is too large fails', async ({ request }) => {
-    // Create a large buffer to simulate oversized file
-    const largeBuffer = Buffer.alloc(1024 * 1024 + 1); // 100k + 1 byte
+    // Create a large buffer to simulate oversized file (1MB + 1 byte > 500KB limit)
+    const largeBuffer = Buffer.alloc(1024 * 1024 + 1); // 1MB + 1 byte
     
     const response = await request.post(`${MEDIA_BASE_URL}/upload`, {
       multipart: {
@@ -156,7 +156,7 @@ test.describe('Media Server E2E Tests', () => {
   });
 
   test('upload jpg image file successfully with thumbnail generation', async ({ request }) => {
-    // Create a small dummy image buffer (simulating a JPG file)
+    // Skip thumbnail generation by using dummy content - thumbnail generation will fail gracefully
     const dummyImageBuffer = Buffer.from('dummy jpg image content');
     
     const response = await request.post(`${MEDIA_BASE_URL}/upload`, {

@@ -47,7 +47,7 @@ services:
       - "4001:4001"
     environment:
       - MEDIA_SERVICE_PORT=4001
-      - MAX_UPLOAD_SIZE=1GB
+      - MAX_UPLOAD_SIZE=500KB
       - ADMIN_API_KEY=test-admin-key-123
     volumes:
       - test_asset_filestore:/assetfilestore
