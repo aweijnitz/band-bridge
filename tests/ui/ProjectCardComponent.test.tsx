@@ -22,7 +22,7 @@ describe('ProjectCardComponent', () => {
         onDelete={jest.fn()}
       />
     );
-    expect(screen.getByText('Edit')).toBeInTheDocument();
+    expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
   it('shows Delete button only if archived', () => {
@@ -59,7 +59,7 @@ describe('ProjectCardComponent', () => {
         onDelete={jest.fn()}
       />
     );
-    fireEvent.click(screen.getByText('Edit'));
+    fireEvent.click(screen.getByTitle('Edit'));
     expect(onEdit).toHaveBeenCalled();
   });
 
