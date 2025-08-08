@@ -7,6 +7,7 @@ import MediaUploadModal from './MediaUploadModal';
 import LoginFormComponent from "../../components/LoginFormComponent";
 import ImageGalleryModal, { ImageThumbnail, ImageItem } from '../../components/ImageGallery';
 import { useParams } from 'next/navigation';
+import DOMPurify from 'dompurify';
 
 interface Media {
   id: number;
@@ -259,7 +260,13 @@ export default function ProjectPage() {
   return (
     <div className="min-h-screen bg-zinc-400 p-8">
       <BreadcrumbNavigationComponent projectId={id} projectName={project?.name} />
-      <h1 className="text-2xl mb-6">{project ? project.name : `Project #${id}`}</h1>
+      <h1 className="text-2xl mb-2">{project ? project.name : `Project #${id}`}</h1>
+      {project?.description && (
+        <div 
+          className="text-gray-700 mb-6"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.description) }}
+        />
+      )}
       <div className="mb-8">
         <label className="block mb-2 font-semibold">
           {project?.status !== 'open' ? 'Project not open' : 'Upload new media'}
