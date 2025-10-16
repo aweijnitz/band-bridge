@@ -25,7 +25,7 @@ erDiagram
     USER ||--o{ USERBAND : "joins"
     BAND ||--o{ USERBAND : "includes"
     USER ||--o{ PROJECT : "owns"
-    BAND ||--o{ PROJECT : "sponsors"
+    BAND ||--o{ PROJECT : "has"
     PROJECT }o--|| BAND : "links_to"
     PROJECT ||--o{ MEDIA : "contains"
     PROJECT ||--o{ GALLERY : "shows"
