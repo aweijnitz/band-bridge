@@ -27,7 +27,7 @@ A collaborative workspace for bands to organise projects, upload media and leave
   - [Local development](#local-development)
 - [Useful commands](#useful-commands)
 - [Project layout](#project-layout)
-- [Microservices](#architecture-and-microservices)
+- [Architecture and Microservices](#architecture-and-microservices)
   - [Next.js web app](#nextjs-web-app)
   - [Media service](#media-service)
   - [Admin service](#admin-service)
