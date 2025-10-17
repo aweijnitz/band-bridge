@@ -27,7 +27,7 @@ A collaborative workspace for bands to organise projects, upload media and leave
   - [Local development](#local-development)
 - [Useful commands](#useful-commands)
 - [Project layout](#project-layout)
-- [Microservices](#microservices)
+- [Microservices](#architecture-and-microservices)
   - [Next.js web app](#nextjs-web-app)
   - [Media service](#media-service)
   - [Admin service](#admin-service)
@@ -212,7 +212,9 @@ band-bridge/
 
 ---
 
-## Microservices
+## Architecture and Microservices
+
+The architecture is documented here: [Architecture.md](doc/Architecture.md)
 
 ### Next.js web app
 - Hosts all UI pages and API routes under `src/app`
