@@ -49,6 +49,20 @@ beforeAll(() => {
   );
 });
 
+const waitForFetch = async () => {
+  const fetchResult = (global.fetch as jest.Mock).mock.results[0]?.value;
+  if (fetchResult) {
+    await fetchResult;
+  }
+};
+
+const renderWithFetch = async (ui: React.ReactElement) => {
+  await act(async () => {
+    render(ui);
+    await waitForFetch();
+  });
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -91,74 +105,66 @@ describe("MediaListItemComponent", () => {
   const mockOnCommentInputChange = jest.fn();
 
   it("renders media title and upload date", async () => {
-    await act(() => {
-      render(
-        <MediaListItemComponent
-          media={mockMedia}
-          comments={mockComments}
-          onAddComment={mockOnAddComment}
-          commentInput=""
-          onCommentInputChange={mockOnCommentInputChange}
-          commentLoading={false}
-          onDeleteMedia={jest.fn()}
-        />
-      );
-    });
+    await renderWithFetch(
+      <MediaListItemComponent
+        media={mockMedia}
+        comments={mockComments}
+        onAddComment={mockOnAddComment}
+        commentInput=""
+        onCommentInputChange={mockOnCommentInputChange}
+        commentLoading={false}
+        onDeleteMedia={jest.fn()}
+      />
+    );
     expect(screen.getByText("Test Media")).toBeInTheDocument();
     expect(screen.getByText(/Uploaded:/)).toBeInTheDocument();
   });
 
   it("renders comments", async () => {
-    await act(() => {
-      render(
-        <MediaListItemComponent
-          media={mockMedia}
-          comments={mockComments}
-          onAddComment={mockOnAddComment}
-          commentInput=""
-          onCommentInputChange={mockOnCommentInputChange}
-          commentLoading={false}
-          onDeleteMedia={jest.fn()}
-        />
-      );
-    });
+    await renderWithFetch(
+      <MediaListItemComponent
+        media={mockMedia}
+        comments={mockComments}
+        onAddComment={mockOnAddComment}
+        commentInput=""
+        onCommentInputChange={mockOnCommentInputChange}
+        commentLoading={false}
+        onDeleteMedia={jest.fn()}
+      />
+    );
     expect(screen.getByText("Nice!")).toBeInTheDocument();
     expect(screen.getByText("Great part")).toBeInTheDocument();
   });
 
   it("calls onAddComment when Add button is clicked", async () => {
-    await act(async () => {
-      render(
-        <MediaListItemComponent
-          media={mockMedia}
-          comments={mockComments}
-          onAddComment={mockOnAddComment}
-          commentInput="Test comment"
-          onCommentInputChange={mockOnCommentInputChange}
-          commentLoading={false}
-          onDeleteMedia={jest.fn()}
-        />
-      );
-    });
+    await renderWithFetch(
+      <MediaListItemComponent
+        media={mockMedia}
+        comments={mockComments}
+        onAddComment={mockOnAddComment}
+        commentInput="Test comment"
+        onCommentInputChange={mockOnCommentInputChange}
+        commentLoading={false}
+        onDeleteMedia={jest.fn()}
+      />
+    );
     const button = screen.getByText("Add");
     fireEvent.click(button);
     expect(mockOnAddComment).toHaveBeenCalled();
   });
 
   it("shows Delete button always, enabled only if projectStatus is archived", async () => {
-    await act(async () => {
-      render(
-        <MediaListItemComponent
-          media={mockMedia}
-          comments={mockComments}
-          onAddComment={jest.fn()}
-          commentInput={""}
-          onCommentInputChange={jest.fn()}
-          commentLoading={false}
-          onDeleteMedia={jest.fn()}
-        />
-      );
-    });
+    await renderWithFetch(
+      <MediaListItemComponent
+        media={mockMedia}
+        comments={mockComments}
+        onAddComment={jest.fn()}
+        commentInput={""}
+        onCommentInputChange={jest.fn()}
+        commentLoading={false}
+        onDeleteMedia={jest.fn()}
+      />
+    );
     const btn2 = await screen.findByLabelText("Delete Song");
     expect(btn2).toBeInTheDocument();
     expect(btn2).not.toBeDisabled();
@@ -166,37 +172,33 @@ describe("MediaListItemComponent", () => {
 
   describe("Image Media", () => {
     it("renders image thumbnail for image media", async () => {
-      await act(() => {
-        render(
-          <MediaListItemComponent
-            media={mockImageMedia}
-            comments={[]}
-            onAddComment={mockOnAddComment}
-            commentInput=""
-            onCommentInputChange={mockOnCommentInputChange}
-            commentLoading={false}
-            onDeleteMedia={jest.fn()}
-          />
-        );
-      });
+      await renderWithFetch(
+        <MediaListItemComponent
+          media={mockImageMedia}
+          comments={[]}
+          onAddComment={mockOnAddComment}
+          commentInput=""
+          onCommentInputChange={mockOnCommentInputChange}
+          commentLoading={false}
+          onDeleteMedia={jest.fn()}
+        />
+      );
       expect(screen.getByText("Test Image")).toBeInTheDocument();
       expect(screen.getByTestId("image-thumbnail")).toBeInTheDocument();
     });
 
     it("opens image gallery when thumbnail is clicked", async () => {
-      await act(() => {
-        render(
-          <MediaListItemComponent
-            media={mockImageMedia}
-            comments={[]}
-            onAddComment={mockOnAddComment}
-            commentInput=""
-            onCommentInputChange={mockOnCommentInputChange}
-            commentLoading={false}
-            onDeleteMedia={jest.fn()}
-          />
-        );
-      });
+      await renderWithFetch(
+        <MediaListItemComponent
+          media={mockImageMedia}
+          comments={[]}
+          onAddComment={mockOnAddComment}
+          commentInput=""
+          onCommentInputChange={mockOnCommentInputChange}
+          commentLoading={false}
+          onDeleteMedia={jest.fn()}
+        />
+      );
       
       const thumbnail = screen.getByTestId("image-thumbnail");
       fireEvent.click(thumbnail);
@@ -207,19 +209,17 @@ describe("MediaListItemComponent", () => {
     });
 
     it("does not show play/pause buttons for image media", async () => {
-      await act(() => {
-        render(
-          <MediaListItemComponent
-            media={mockImageMedia}
-            comments={[]}
-            onAddComment={mockOnAddComment}
-            commentInput=""
-            onCommentInputChange={mockOnCommentInputChange}
-            commentLoading={false}
-            onDeleteMedia={jest.fn()}
-          />
-        );
-      });
+      await renderWithFetch(
+        <MediaListItemComponent
+          media={mockImageMedia}
+          comments={[]}
+          onAddComment={mockOnAddComment}
+          commentInput=""
+          onCommentInputChange={mockOnCommentInputChange}
+          commentLoading={false}
+          onDeleteMedia={jest.fn()}
+        />
+      );
       
       expect(screen.queryByLabelText("Play")).not.toBeInTheDocument();
       expect(screen.queryByLabelText("Pause")).not.toBeInTheDocument();
@@ -227,19 +227,17 @@ describe("MediaListItemComponent", () => {
     });
 
     it("closes image gallery when close button is clicked", async () => {
-      await act(() => {
-        render(
-          <MediaListItemComponent
-            media={mockImageMedia}
-            comments={[]}
-            onAddComment={mockOnAddComment}
-            commentInput=""
-            onCommentInputChange={mockOnCommentInputChange}
-            commentLoading={false}
-            onDeleteMedia={jest.fn()}
-          />
-        );
-      });
+      await renderWithFetch(
+        <MediaListItemComponent
+          media={mockImageMedia}
+          comments={[]}
+          onAddComment={mockOnAddComment}
+          commentInput=""
+          onCommentInputChange={mockOnCommentInputChange}
+          commentLoading={false}
+          onDeleteMedia={jest.fn()}
+        />
+      );
       
       const thumbnail = screen.getByTestId("image-thumbnail");
       fireEvent.click(thumbnail);

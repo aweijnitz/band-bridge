@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Purpose: This document explains the architecture, conventions, and rules for agents and humans contributing to this project. Rule 0: If you change architecture, folder structure, or protocols, update this file in the same PR.
 
 ## Essential Commands
 

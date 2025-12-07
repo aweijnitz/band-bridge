@@ -1,7 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ImageGalleryModal, { ImageThumbnail } from "../../src/app/components/ImageGallery";
+import { act } from "react";
+
+const mockFetch = jest.fn();
+
+beforeEach(() => {
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: async () => [],
+  });
+  global.fetch = mockFetch as any;
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
 
 // Mock react-image-gallery
 jest.mock("react-image-gallery", () => {
@@ -40,7 +55,7 @@ describe("ImageGallery Components", () => {
   ];
 
   describe("ImageGalleryModal", () => {
-    it("renders gallery when open", () => {
+    it("renders gallery when open", async () => {
       render(
         <ImageGalleryModal
           images={mockImages}
@@ -49,6 +64,10 @@ describe("ImageGallery Components", () => {
           initialIndex={0}
         />
       );
+
+      await act(async () => {
+        await (mockFetch.mock.results[0]?.value ?? Promise.resolve());
+      });
 
       expect(screen.getByTestId("react-image-gallery")).toBeInTheDocument();
     });
@@ -66,7 +85,7 @@ describe("ImageGallery Components", () => {
       expect(screen.queryByTestId("react-image-gallery")).not.toBeInTheDocument();
     });
 
-    it("calls onClose when close button is clicked", () => {
+    it("calls onClose when close button is clicked", async () => {
       const mockOnClose = jest.fn();
       render(
         <ImageGalleryModal
@@ -77,13 +96,17 @@ describe("ImageGallery Components", () => {
         />
       );
 
+      await act(async () => {
+        await (mockFetch.mock.results[0]?.value ?? Promise.resolve());
+      });
+
       const closeButton = screen.getByText("✕");
       fireEvent.click(closeButton);
 
       expect(mockOnClose).toHaveBeenCalled();
     });
 
-    it("renders empty gallery when no images", () => {
+    it("renders empty gallery when no images", async () => {
       render(
         <ImageGalleryModal
           images={[]}
@@ -92,6 +115,10 @@ describe("ImageGallery Components", () => {
           initialIndex={0}
         />
       );
+
+      await waitFor(() => {
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
 
       expect(screen.queryByTestId("react-image-gallery")).not.toBeInTheDocument();
     });
