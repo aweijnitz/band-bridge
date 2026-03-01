@@ -16,12 +16,15 @@ Purpose: This document explains the architecture, conventions, and rules for age
 - `npm run test:ui` - Run UI tests only  
 - `npm run test:coverage` - Run tests with coverage report
 - `npm run test:e2e` - Run Playwright end-to-end tests
+- `npm run build:test-media-image` - Build prebuilt media image for microservices E2E
 
 ### Code Quality
 - `npm run lint` - Run ESLint
 
 ### Database
 - `npm run reset` - Reset database and clear filestore (destructive)
+- `npm run backup -- export ./backups/mybackup.tar.gz` - Export full DB + assets backup
+- `npm run backup -- --yes import ./backups/mybackup.tar.gz` - Import backup (destructive)
 
 ### Microservices
 - `npm run start:media-service` - Start media service independently
@@ -51,6 +54,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 - Deep linking to media with timestamps
 - File proxying through Next.js API for security
 - Session-based authentication with middleware
+- CLI backup/restore for database and media assets using gzipped tar archives
 
 ## Development Patterns
 
@@ -71,6 +75,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 - Waveform generation using `audiowaveform` for `.dat` files
 - Files stored in Docker volume at `/assetfilestore`
 - Media types: audio (MP3/WAV), video (MP4/MOV/AVI/H.264)
+- Backup tooling snapshots `/assetfilestore` together with PostgreSQL data
 
 ### Database Operations
 - Prisma ORM with PostgreSQL
@@ -119,3 +124,4 @@ Key environment variables:
 - Deep linking supports sharing media with timestamps
 - API routes require session authentication except for public paths
 - Media files are not directly accessible from the host filesystem
+- Use `bbdata.sh` for operational backup/restore in Docker Compose deployments

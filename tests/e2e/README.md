@@ -14,6 +14,9 @@ This directory contains E2E tests for the Band Bridge microservices (admin serve
 ### Option 1: Using npm scripts (Recommended)
 
 ```bash
+# Build the prebuilt media test image once (heavy step; cached afterwards)
+npm run build:test-media-image
+
 # Run microservices E2E tests with automated Docker management
 npm run test:e2e:microservices
 
@@ -21,23 +24,33 @@ npm run test:e2e:microservices
 npm run test:e2e:microservices:manual
 ```
 
+By default, the E2E setup expects a prebuilt media image:
+- `TEST_MEDIA_IMAGE=band-bridge-test-media:local`
+
+Optional flags:
+- `E2E_BUILD_TEST_MEDIA_IMAGE=1` - build media image during setup
+- `E2E_BUILD_COMPOSE_IMAGES=1` - force compose rebuild for app/admin images
+
 ### Option 2: Manual Docker setup
 
 ```bash
-# 1. Start test services
-docker-compose -f docker-compose.test.yml up -d --build
+# 1. Build test-media image once
+TEST_MEDIA_IMAGE=band-bridge-test-media:local ./scripts/build-test-media-image.sh
 
-# 2. Wait for services to be healthy (check with docker ps)
-docker-compose -f docker-compose.test.yml ps
+# 2. Start test services (without forced rebuild)
+docker compose -f docker-compose.test.yml up -d
 
-# 3. Run migrations
-docker-compose -f docker-compose.test.yml exec test-admin npx prisma migrate deploy
+# 3. Wait for services to be healthy (check with docker ps)
+docker compose -f docker-compose.test.yml ps
 
-# 4. Run tests
+# 4. Run migrations
+docker compose -f docker-compose.test.yml exec test-admin npx prisma migrate deploy
+
+# 5. Run tests
 npx playwright test --config=playwright.microservices.config.ts
 
-# 5. Clean up
-docker-compose -f docker-compose.test.yml down --volumes --remove-orphans
+# 6. Clean up
+docker compose -f docker-compose.test.yml down --volumes --remove-orphans
 ```
 
 ## Test Services

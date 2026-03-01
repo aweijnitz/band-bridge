@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+.next
+coverage
+playwright-report
+test-results
+tmp
+backups
+filestore
+*.log
+*.tar
+*.tar.gz
+DATA-BACKUP-PLAN.md
+DATA-BACKUP-PROGRESS.md

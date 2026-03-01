@@ -2,11 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: ['**/admin-server.spec.ts', '**/media-server.spec.ts'],
+  testMatch: ['**/admin-server.spec.ts', '**/media-server.spec.ts', '**/backup-restore.spec.ts'],
   fullyParallel: false, // Run tests sequentially to avoid resource conflicts
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 4, // Use single worker for microservices tests
+  workers: 1, // Use single worker for microservices tests
   reporter: 'html',
   globalSetup: require.resolve('./tests/e2e/microservices.global-setup'),
   globalTeardown: require.resolve('./tests/e2e/microservices.global-teardown'),

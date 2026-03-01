@@ -53,6 +53,7 @@ A collaborative workspace for bands to organise projects, upload media and leave
 - Audio playback with WaveSurfer.js and video with HTML5 controls
 - Jest and Playwright test suites covering API, UI and E2E scenarios
 - Dedicated admin microservice for managing users, bands and API keys
+- CLI backup/restore tool for full database + asset volume snapshots (`tar.gz`)
 
 ## Tech Stack
 - **Frontend:** Next.js 15, React 19, Tailwind CSS 4
@@ -180,10 +181,45 @@ npm run lint          # ESLint
 | `npm run generate:schema` | Regenerate the Prisma client in `src/generated/prisma` |
 | `npm run test`, `npm run test:api`, `npm run test:ui` | Jest test suites |
 | `npm run test:e2e` | Playwright tests against running services |
+| `npm run build:test-media-image` | Build cached prebuilt media image for microservices E2E |
 | `npm run lint` | ESLint checks |
 | `npm run reset` | Reset database and clear local filestore (⚠️ destructive) |
+| `npm run backup -- export ./backups/mybackup.tar.gz` | Export DB + assets into a gzipped tar backup |
+| `npm run backup -- --yes import ./backups/mybackup.tar.gz` | Import DB + assets from backup (⚠️ destructive) |
 | `npm run start:media-service` | Run the media microservice in isolation |
 | `npm run build:media-service` | Build the media microservice bundle |
+
+---
+
+## Backup and Restore
+
+Band Bridge includes `bbdata.sh`, a Docker Compose aware backup CLI.
+
+```sh
+# Export to a gzipped tar archive
+./bbdata.sh export ./backups/mybackup.tar.gz
+
+# Import from archive (destructive; requires --yes)
+./bbdata.sh --yes import ./backups/mybackup.tar.gz
+```
+
+What is included:
+- Full PostgreSQL dump (`database.sql`)
+- Full media asset store (`/assetfilestore`) including waveform `.dat` and thumbnails
+- `manifest.json` metadata
+
+Archive structure:
+- `manifest.json`
+- `database.sql`
+- `assets.tar`
+
+Notes:
+- Export/import stop `web`, `admin`, and `media` briefly to keep snapshots consistent.
+- Use `--force` during export if the destination archive already exists.
+- The script supports alternate compose setups through env overrides (used by test stack), for example:
+  - `BBDATA_COMPOSE_FILE`
+  - `BBDATA_DB_SERVICE`, `BBDATA_MEDIA_SERVICE`, `BBDATA_ADMIN_SERVICE`, `BBDATA_WEB_SERVICE`
+  - `BBDATA_DB_NAME`, `BBDATA_DB_USER`
 
 ---
 
@@ -205,6 +241,7 @@ band-bridge/
 ├── public/                 # Static assets served by Next.js
 ├── scripts/                # Helper scripts (e.g. Playwright orchestration)
 ├── tests/                  # Jest and Playwright tests
+├── bbdata.sh               # Backup/restore CLI (DB + assets)
 ├── docker-compose.yml      # Production-ready compose file
 ├── docker-compose.test.yml # Compose file optimised for automated tests
 └── README.md

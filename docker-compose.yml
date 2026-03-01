@@ -21,7 +21,8 @@ services:
       - asset_filestore:/assetfilestore
   admin:
     build:
-      context: ./src/backend/admin
+      context: .
+      dockerfile: src/backend/admin/Dockerfile
     restart: unless-stopped
     env_file:
       - ./src/backend/admin/.env

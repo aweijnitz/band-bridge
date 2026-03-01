@@ -10,6 +10,9 @@
 set -e
 
 echo "🚀 Starting E2E tests for microservices..."
+TEST_MEDIA_IMAGE="${TEST_MEDIA_IMAGE:-band-bridge-test-media:local}"
+E2E_BUILD_TEST_MEDIA_IMAGE="${E2E_BUILD_TEST_MEDIA_IMAGE:-0}"
+E2E_BUILD_COMPOSE_IMAGES="${E2E_BUILD_COMPOSE_IMAGES:-0}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -65,10 +68,26 @@ fi
 # Clean up any existing containers/volumes
 cleanup
 
-print_status "Building and starting test services..."
+if [ "$E2E_BUILD_TEST_MEDIA_IMAGE" = "1" ]; then
+    print_status "Building test media image (${TEST_MEDIA_IMAGE})..."
+    TEST_MEDIA_IMAGE="$TEST_MEDIA_IMAGE" ./scripts/build-test-media-image.sh
+else
+    if ! docker image inspect "$TEST_MEDIA_IMAGE" >/dev/null 2>&1; then
+        print_error "Prebuilt media image not found: $TEST_MEDIA_IMAGE"
+        print_error "Build it with: npm run build:test-media-image"
+        print_error "Or run with E2E_BUILD_TEST_MEDIA_IMAGE=1 to build automatically"
+        exit 1
+    fi
+fi
 
-# Build and start the test services
-docker compose -f docker-compose.test.yml up -d --build
+print_status "Starting test services..."
+
+# Build/rebuild app/admin images only when explicitly requested.
+if [ "$E2E_BUILD_COMPOSE_IMAGES" = "1" ]; then
+    docker compose -f docker-compose.test.yml up -d --build
+else
+    docker compose -f docker-compose.test.yml up -d
+fi
 
 # Wait for services to be healthy
 print_status "Waiting for services to be ready..."

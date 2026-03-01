@@ -3,17 +3,36 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
+const composeFile = 'docker-compose.test.yml';
+const testMediaImage = process.env.TEST_MEDIA_IMAGE || 'band-bridge-test-media:local';
 
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Setting up microservices for E2E tests...');
   
   try {
     // Clean up any existing containers
-    await execAsync('docker compose -f docker-compose.test.yml down --volumes --remove-orphans').catch(() => {});
+    await execAsync(`docker compose -f ${composeFile} down --volumes --remove-orphans`).catch(() => {});
+
+    if (process.env.E2E_BUILD_TEST_MEDIA_IMAGE === '1') {
+      console.log(`Building test media image (${testMediaImage})...`);
+      await execAsync('bash ./scripts/build-test-media-image.sh', { env: process.env });
+    } else {
+      try {
+        await execAsync(`docker image inspect ${testMediaImage}`);
+      } catch {
+        throw new Error(
+          `Missing prebuilt test media image "${testMediaImage}". ` +
+          'Build it first with `npm run build:test-media-image` or set E2E_BUILD_TEST_MEDIA_IMAGE=1.'
+        );
+      }
+    }
     
     // Start services
     console.log('Starting test services...');
-    await execAsync('docker compose -f docker-compose.test.yml up -d --build');
+    const composeUp = process.env.E2E_BUILD_COMPOSE_IMAGES === '1'
+      ? `docker compose -f ${composeFile} up -d --build`
+      : `docker compose -f ${composeFile} up -d`;
+    await execAsync(composeUp);
     
     // Wait for services to be ready
     console.log('Waiting for services to be ready...');
@@ -22,7 +41,7 @@ async function globalSetup(config: FullConfig) {
     
     while (attempts < maxAttempts) {
       try {
-        const { stdout } = await execAsync('docker compose -f docker-compose.test.yml ps');
+        const { stdout } = await execAsync(`docker compose -f ${composeFile} ps`);
         if (stdout.includes('healthy')) {
           const healthyServices = (stdout.match(/healthy/g) || []).length;
           if (healthyServices >= 4) { // db, media, admin, app
@@ -44,7 +63,7 @@ async function globalSetup(config: FullConfig) {
     
     // Run database migrations
     console.log('Running database migrations...');
-    await execAsync('docker compose -f docker-compose.test.yml exec -T test-admin npx prisma migrate deploy');
+    await execAsync(`docker compose -f ${composeFile} exec -T test-admin npx prisma migrate deploy`);
     
     console.log('✅ Microservices setup complete');
   } catch (error) {

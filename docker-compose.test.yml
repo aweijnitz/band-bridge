@@ -41,8 +41,7 @@ services:
       retries: 5
   
   test-media:
-    build:
-      context: ./src/backend/media
+    image: ${TEST_MEDIA_IMAGE:-band-bridge-test-media:local}
     ports:
       - "4001:4001"
     environment:
@@ -59,12 +58,14 @@ services:
   
   test-admin:
     build:
-      context: ./src/backend/admin
+      context: .
+      dockerfile: src/backend/admin/Dockerfile
     ports:
       - "4002:4002"
     environment:
       - PORT=4002
       - DATABASE_URL=postgresql://postgres:testpass@test-db:5432/bandbridge_test
+      - MEDIA_SERVICE_URL=http://test-media:4001
       - ADMIN_API_KEY=test-admin-key-123
       - JWT_SECRET=test-jwt-secret
     depends_on:
