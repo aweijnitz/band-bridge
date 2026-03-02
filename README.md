@@ -118,6 +118,26 @@ A collaborative workspace for bands to organise projects, upload media and leave
    docker compose down
    ```
 
+### Upgrade to latest release tag
+Run the upgrade helper from the project root on your server:
+```sh
+./upgrade.sh
+```
+
+What it does:
+- validates required preconditions (`.env`, required variables, Docker/Git availability)
+- fetches release tags and checks out the newest `v*` git tag
+- stops the running stack, rebuilds images, tags built images (`band-bridge-<service>:<tag>` and `:latest`)
+- starts the stack again and runs health checks
+- attempts automatic rollback to the previous git ref if the upgrade fails
+
+Useful options:
+```sh
+./upgrade.sh --tag v1.2.1     # upgrade to a specific release tag
+./upgrade.sh --skip-fetch     # do not fetch tags from remote
+./upgrade.sh --skip-health    # skip post-start health checks
+```
+
 ### Database migrations
 The schema is created automatically on the first start. When deploying schema changes:
 ```sh
