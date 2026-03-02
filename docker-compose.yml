@@ -11,6 +11,8 @@ services:
   media:
     build:
       context: ./src/backend/media
+      args:
+        - AUDIOWAVEFORM_IMAGE=${AUDIOWAVEFORM_IMAGE:-aweijnitz/band-bridge-audiowaveform:1.0.0}
     restart: always
     depends_on:
       - db

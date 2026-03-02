@@ -29,6 +29,7 @@ Purpose: This document explains the architecture, conventions, and rules for age
 ### Microservices
 - `npm run start:media-service` - Start media service independently
 - `npm run build:media-service` - Build media service
+- `docker buildx build --platform linux/amd64,linux/arm64 -t aweijnitz/band-bridge-audiowaveform:1.0.0 --push -f src/backend/media/Dockerfile.audiowaveform src/backend/media` - Build and publish prebuilt audiowaveform binary image
 
 ## Architecture Overview
 
@@ -73,6 +74,7 @@ Band Bridge is a microservices-based web application for band collaboration with
 ### Media Handling
 - Media microservice handles file uploads and processing
 - Waveform generation using `audiowaveform` for `.dat` files
+- `audiowaveform` binary comes from a prebuilt image (`AUDIOWAVEFORM_IMAGE`) referenced by `src/backend/media/Dockerfile`
 - Files stored in Docker volume at `/assetfilestore`
 - Media types: audio (MP3/WAV), video (MP4/MOV/AVI/H.264)
 - Backup tooling snapshots `/assetfilestore` together with PostgreSQL data
